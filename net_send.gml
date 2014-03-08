@@ -17,7 +17,7 @@ net_peer_type =         ds_map_find_value(net_vars, "net_peer_type");
 net_peer_socket =       ds_map_find_value(net_vars, "net_peer_socket");
 
 var destid, pos, msgtype, datalist;
-var destkey, conntype, url, port, socket, buffer, str_;
+var destkey, conntype, url, port, socket, time, buffer, str_;
 destid = argument0;
 pos = ds_list_find_index(net_peer_id, destid);
 if (pos<0) return -1;
@@ -29,6 +29,7 @@ port = ds_list_find_value(net_peer_port, pos);
 socket = ds_list_find_value(net_peer_socket, pos);
 msgtype = argument1;
 datalist = argument2;
+time = string_replace(string_format(current_year, 4, 0)+string_format(current_month, 2, 0)+string_format(current_day, 2, 0)+string_format(current_hour, 2, 0)+string_format(current_minute, 2, 0)+string_format(current_second, 2, 0), " ", "0");
 
 switch (conntype) {
     case NET_BROADCAST:
@@ -45,7 +46,7 @@ switch (conntype) {
         buffer_write(buffer, buffer_string, "-1"); //Signature
         //Hash from here
         buffer_write(buffer, buffer_string, destkey);
-        buffer_write(buffer, buffer_string, get_time_string());
+        buffer_write(buffer, buffer_string, time);
         for (var i=0; i<ds_list_size(datalist); i++) {
             buffer_write(buffer, buffer_string, string(ds_list_find_value(datalist, i)));
         }
@@ -72,7 +73,7 @@ switch (conntype) {
         str_ += "&OP2PNdata_5="+"-1";
         //Hash
         str_ += "&OP2PNdata_6="+destkey;
-        str_ += "&OP2PNdata_7="+get_time_string();
+        str_ += "&OP2PNdata_7="+time;
         for (var i=0; i<ds_list_size(datalist); i++) {
             str_ += "&OP2PNdata_"+string(i+8)+"="+string(ds_list_find_value(datalist, i));
         }
