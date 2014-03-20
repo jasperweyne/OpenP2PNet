@@ -161,10 +161,8 @@ ds_map_replace(net_vars, "net_timer", net_timer);
 ** RETURN VALUES **
 *******************
 **   1: Message correctly handled
-**   0: Error
-**  -1: Unknown protocol
-**  -2: OPENP2PNET implementation is outdated
-** any: Unknown OPENP2PNET Message, return value is message type
+**   0: Error in message or unknown protocol
+**  -1: Unknown message ID
 */
 globalvar net_vars;
 var net_key;
@@ -188,22 +186,39 @@ net_msglist =           ds_map_find_value(net_vars, "net_msglist");
 net_idcounter =         ds_map_find_value(net_vars, "net_idcounter");
 net_lanserver =         ds_map_find_value(net_vars, "net_lanserver");
 net_pubserver =         ds_map_find_value(net_vars, "net_pubserver");
-var recvlist, recvip, recvport, recvsocket, recvmsg, recvtype, recvkey, recvname, recvtokey, recvsignature, recvtime, recvhash, datalist, datastart;
+var recvlist, recvheaders, recvip, recvport, recvsocket, recvmsg, recvtype, recvkey, recvname, recvtokey, recvtime, recvhash, datalist, datastart;
 
 recvlist = argument1;
-if (string_copy(ds_list_find_value(recvlist, 0), 1, 12)!="[OPENP2PNET]") return -1;
-if (string_delete(ds_list_find_value(recvlist, 0), 1, 12)!="[v0.1.0.0]") return -2;
 recvip = argument2;
 recvport = argument3;
 recvsocket = argument4;
-recvmsg = real(ds_list_find_value(recvlist, 1));
-recvtype = real(ds_list_find_value(recvlist, 2));
-recvkey = ds_list_find_value(recvlist, 3);
-recvname = ds_list_find_value(recvlist, 4);
-recvsignature = ds_list_find_value(recvlist, 5);
-recvtokey = ds_list_find_value(recvlist, 6);
-recvtime = ds_list_find_value(recvlist, 7);
-datastart = 8;
+
+//Add headers to map
+if (ds_list_find_value(recvlist, 0)!="[OPENP2PNET]") return 0;
+var dsMap = ds_map_create();
+for (var i=1; ds_list_find_value(recvlist, i)!="[DATA]"; i++) {
+    var mapstr, key, val;
+    mapstr = ds_list_find_value(recvlist, i);
+    key = string_copy(mapstr, 1, string_pos(":", mapstr)-1);
+    val = string_delete(mapstr, 1, string_pos(":", mapstr));
+    ds_map_add(dsMap, key, val);
+}
+datastart = i+1;
+
+//Check dependency vars (type, key, tokey, time)
+if (ds_map_exists(dsMap, "type")==false  || ds_map_exists(dsMap, "srckey")==false  || ds_map_exists(dsMap, "key")==false  || ds_map_exists(dsMap, "time")==false) {
+    ds_map_destroy(dsMap);
+    return 0;
+} else {
+    recvtype = ds_map_find_value(dsMap, "type");
+    recvkey = ds_map_find_value(dsMap, "srckey");
+    recvtokey = ds_map_find_value(dsMap, "key");
+    recvtime = ds_map_find_value(dsMap, "time");
+    if (ds_map_exists(dsMap, "msg")==true) recvmsg = ds_map_find_value(dsMap, "msg"); else recvmsg = 0;
+    if (ds_map_exists(dsMap, "srcname")==true) recvname = ds_map_find_value(dsMap, "srcname"); else recvname = "?";
+    recvheaders = ds_map_write(dsMap);
+    ds_map_destroy(dsMap);
+}
 
 //Check signature
 //pass
@@ -284,27 +299,49 @@ switch (recvtype) {
 while (recvmsg==MSG_FORWARD) {
     recvip = ds_list_find_value(recvlist, datastart);
     recvport = real(ds_list_find_value(recvlist, datastart+1));
-    if (string_copy(ds_list_find_value(recvlist, datastart+2), 1, 12)!="[OPENP2PNET]") return -1;
-    if (string_delete(ds_list_find_value(recvlist, datastart+2), 1, 12)!="[v0.1.0.0]") return -2;
-    recvmsg = real(ds_list_find_value(recvlist, datastart+3));
-    recvtype = real(ds_list_find_value(recvlist, datastart+4));
-    recvkey = ds_list_find_value(recvlist, datastart+5);
-    recvname = ds_list_find_value(recvlist, datastart+6);
-    recvsignature = ds_list_find_value(recvlist, datastart+7);
-    recvtokey = ds_list_find_value(recvlist, datastart+8);
-    recvtime = ds_list_find_value(recvlist, datastart+9);
-    datastart += 10;
+    
+    //Add headers to map
+    if (ds_list_find_value(recvlist, datastart+2)!="[OPENP2PNET]") return 0;
+    var dsMap = ds_map_create();
+    for (var i=datastart+3; ds_list_find_value(recvlist, i)!="[DATA]"; i++) {
+        var mapstr, key, val;
+        mapstr = ds_list_find_value(recvlist, i);
+        key = string_copy(mapstr, 1, string_pos(":", mapstr)-1);
+        val = string_delete(mapstr, 1, string_pos(":", mapstr));
+        ds_map_add(dsMap, key, val);
+    }
+    datastart = i+1;
+    
+    //Check dependency vars (type, key, tokey, time)
+    if (ds_map_exists(dsMap, "type")==false  || ds_map_exists(dsMap, "srckey")==false  || ds_map_exists(dsMap, "key")==false  || ds_map_exists(dsMap, "time")==false) {
+        ds_map_destroy(dsMap);
+        return 0;
+    } else {
+        recvtype = ds_map_find_value(dsMap, "type");
+        recvkey = ds_map_find_value(dsMap, "srckey");
+        recvtokey = ds_map_find_value(dsMap, "key");
+        recvtime = ds_map_find_value(dsMap, "time");
+        if (ds_map_exists(dsMap, "msg")==true) recvmsg = ds_map_find_value(dsMap, "msg"); else recvmsg = 0;
+        if (ds_map_exists(dsMap, "srcname")==true) recvname = ds_map_find_value(dsMap, "srcname"); else recvname = "?";
+        recvheaders = ds_map_write(dsMap);
+        ds_map_destroy(dsMap);
+    }
+    
     
     //Add current peer in chain
-    if (ds_list_find_index(net_peer_key, recvkey)<0) net_connect(recvtype, recvip, recvport);
+    if (ds_list_find_index(net_peer_key, recvkey)<0) {
+        var pos = ds_list_find_index(net_peer_id, net_connect(recvtype, recvip, recvport));
+        ds_list_replace(net_peer_key, pos, recvkey);
+        ds_list_replace(net_peer_name, pos, recvname);
+    }
     
     //Quit when no message provided
     if (ds_list_size(recvlist)==datastart) return 1;
 }
 
 //Discard when known
-var hashstr = "";
-for (i=datastart-2; i<ds_list_size(recvlist); i++) {
+var hashstr = recvtokey+recvtime;
+for (i=datastart; i<ds_list_size(recvlist); i++) {
     hashstr += ds_list_find_value(recvlist, i);
 }
 recvhash = sha1_string_unicode(hashstr);
@@ -435,7 +472,7 @@ switch (recvmsg) {
         return 1;
         
     default:
-        return recvmsg;
+        return -1;
 }
 
 #define net_connect
@@ -659,67 +696,128 @@ net_peer_type =         ds_map_find_value(net_vars, "net_peer_type");
 net_peer_socket =       ds_map_find_value(net_vars, "net_peer_socket");
 
 var destid, pos, msgtype, datalist;
-var destkey, conntype, url, port, socket, buffer, str_;
+var destkey, conntype, url, port, socket, time, buffer, str_;
 destid = argument0;
-pos = ds_list_find_index(net_peer_id, destid);
-if (pos<0) return -1;
-
-destkey = ds_list_find_value(net_peer_key, pos);
-conntype = ds_list_find_value(net_peer_nettype, pos);
-url = ds_list_find_value(net_peer_ip, pos);
-port = ds_list_find_value(net_peer_port, pos);
-socket = ds_list_find_value(net_peer_socket, pos);
 msgtype = argument1;
 datalist = argument2;
+time = string_replace(string_format(current_year, 4, 0)+string_format(current_month, 2, 0)+string_format(current_day, 2, 0)+string_format(current_hour, 2, 0)+string_format(current_minute, 2, 0)+string_format(current_second, 2, 0), " ", "0");
 
-switch (conntype) {
-    case NET_BROADCAST:
-    case NET_UDP:
-    case NET_TCP:
-    case NET_TCPRAW:
-        buffer = buffer_create(1, buffer_grow, 1);
-        buffer_seek(buffer, buffer_seek_start, 0);
-        buffer_write(buffer, buffer_string, "[OPENP2PNET][v0.1.0.0]");
-        buffer_write(buffer, buffer_string, string(msgtype));
-        buffer_write(buffer, buffer_string, string(conntype));
-        buffer_write(buffer, buffer_string, net_key);
-        buffer_write(buffer, buffer_string, net_name);
-        buffer_write(buffer, buffer_string, "-1"); //Signature
-        //Hash from here
-        buffer_write(buffer, buffer_string, destkey);
-        buffer_write(buffer, buffer_string, get_time_string());
-        for (var i=0; i<ds_list_size(datalist); i++) {
-            buffer_write(buffer, buffer_string, string(ds_list_find_value(datalist, i)));
-        }
+if (destid<0) {
+    port = abs(destid);
+    buffer = buffer_create(1, buffer_grow, 1);
+    buffer_seek(buffer, buffer_seek_start, 0);
+    buffer_write(buffer, buffer_string, "[OPENP2PNET]");
+    buffer_write(buffer, buffer_string, "msg:"+string(msgtype));
+    buffer_write(buffer, buffer_string, "type:"+string(conntype));
+    buffer_write(buffer, buffer_string, "srckey:"+net_key);
+    buffer_write(buffer, buffer_string, "srcname:"+net_name);
+    buffer_write(buffer, buffer_string, "key:"+destkey);
+    buffer_write(buffer, buffer_string, "time"+time);
+    buffer_write(buffer, buffer_string, "[DATA]");
+    for (var i=0; i<ds_list_size(datalist); i++) {
+        buffer_write(buffer, buffer_string, string(ds_list_find_value(datalist, i)));
+    }
+    network_send_broadcast(socket, port, buffer, buffer_get_size(buffer));
+    buffer_delete(buffer);
+} else if (destid==0 || ds_list_find_index(net_peer_id, destid)<0) {
+    for (pos=0; pos<ds_list_size(net_peer_id); pos++) {
+        destkey = ds_list_find_value(net_peer_key, pos);
+        conntype = ds_list_find_value(net_peer_nettype, pos);
+        url = ds_list_find_value(net_peer_ip, pos);
+        port = ds_list_find_value(net_peer_port, pos);
+        socket = ds_list_find_value(net_peer_socket, pos);
         switch (conntype) {
-            case NET_BROADCAST:
-                network_send_broadcast(socket, port, buffer, buffer_get_size(buffer));
-                break;
             case NET_UDP:
-                network_send_udp(socket, url, port, buffer, buffer_get_size(buffer));
-                break;
             case NET_TCP:
             case NET_TCPRAW:
-                network_send_packet(socket, buffer, buffer_get_size(buffer));
+                buffer = buffer_create(1, buffer_grow, 1);
+                buffer_seek(buffer, buffer_seek_start, 0);
+                buffer_write(buffer, buffer_string, "[OPENP2PNET]");
+                buffer_write(buffer, buffer_string, "msg:"+string(msgtype));
+                buffer_write(buffer, buffer_string, "type:"+string(conntype));
+                buffer_write(buffer, buffer_string, "srckey:"+net_key);
+                buffer_write(buffer, buffer_string, "srcname:"+net_name);
+                buffer_write(buffer, buffer_string, "key:"+destkey);
+                buffer_write(buffer, buffer_string, "time"+time);
+                buffer_write(buffer, buffer_string, "[DATA]");
+                for (var i=0; i<ds_list_size(datalist); i++) {
+                    buffer_write(buffer, buffer_string, string(ds_list_find_value(datalist, i)));
+                }
+                switch (conntype) {
+                    case NET_UDP:
+                        network_send_udp(socket, url, port, buffer, buffer_get_size(buffer));
+                        break;
+                    case NET_TCP:
+                    case NET_TCPRAW:
+                        network_send_packet(socket, buffer, buffer_get_size(buffer));
+                        break;
+                }
+                buffer_delete(buffer);
+                break;
+            case NET_HTTP:
+                str_ = url+"?protocol=OpenP2PNet";
+                str_ += "&msg="+string(msgtype);
+                str_ += "&type="+string(conntype);
+                str_ += "&srckey="+net_key;
+                str_ += "&srcname="+net_name;
+                str_ += "&key="+destkey;
+                str_ += "&time="+time;
+                for (var i=0; i<ds_list_size(datalist); i++) {
+                    str_ += "&OP2PNdata_"+string(i)+"="+string(ds_list_find_value(datalist, i));
+                }
+                http_get(str_);
                 break;
         }
-        buffer_delete(buffer);
-        break;
-    case NET_HTTP:
-        str_ = url+"?OP2PNdata_0=[OPENP2PNET][v0.1.0.0]";
-        str_ += "&OP2PNdata_1="+string(msgtype);
-        str_ += "&OP2PNdata_2="+string(conntype);
-        str_ += "&OP2PNdata_3="+net_key;
-        str_ += "&OP2PNdata_4="+net_name;
-        str_ += "&OP2PNdata_5="+"-1";
-        //Hash
-        str_ += "&OP2PNdata_6="+destkey;
-        str_ += "&OP2PNdata_7="+get_time_string();
-        for (var i=0; i<ds_list_size(datalist); i++) {
-            str_ += "&OP2PNdata_"+string(i+8)+"="+string(ds_list_find_value(datalist, i));
-        }
-        http_get(str_);
-        break;
+    }
+} else {
+    pos = ds_list_find_index(net_peer_id, destid);
+    destkey = ds_list_find_value(net_peer_key, pos);
+    conntype = ds_list_find_value(net_peer_nettype, pos);
+    url = ds_list_find_value(net_peer_ip, pos);
+    port = ds_list_find_value(net_peer_port, pos);
+    socket = ds_list_find_value(net_peer_socket, pos);
+    switch (conntype) {
+        case NET_UDP:
+        case NET_TCP:
+        case NET_TCPRAW:
+            buffer = buffer_create(1, buffer_grow, 1);
+            buffer_seek(buffer, buffer_seek_start, 0);
+            buffer_write(buffer, buffer_string, "[OPENP2PNET]");
+            buffer_write(buffer, buffer_string, "msg:"+string(msgtype));
+            buffer_write(buffer, buffer_string, "type:"+string(conntype));
+            buffer_write(buffer, buffer_string, "srckey:"+net_key);
+            buffer_write(buffer, buffer_string, "srcname:"+net_name);
+            buffer_write(buffer, buffer_string, "key:"+destkey);
+            buffer_write(buffer, buffer_string, "time:"+time);
+            buffer_write(buffer, buffer_string, "[DATA]");
+            for (var i=0; i<ds_list_size(datalist); i++) {
+                buffer_write(buffer, buffer_string, string(ds_list_find_value(datalist, i)));
+            }
+            switch (conntype) {
+                case NET_UDP:
+                    network_send_udp(socket, url, port, buffer, buffer_get_size(buffer));
+                    break;
+                case NET_TCP:
+                case NET_TCPRAW:
+                    network_send_packet(socket, buffer, buffer_get_size(buffer));
+                    break;
+            }
+            buffer_delete(buffer);
+            break;
+        case NET_HTTP:
+            str_ = url+"?protocol=OpenP2PNet";
+            str_ += "&msg="+string(msgtype);
+            str_ += "&type="+string(conntype);
+            str_ += "&srckey="+net_key;
+            str_ += "&srcname="+net_name;
+            str_ += "&key="+destkey;
+            str_ += "&time="+time;
+            for (var i=0; i<ds_list_size(datalist); i++) {
+                str_ += "&OP2PNdata_"+string(i)+"="+string(ds_list_find_value(datalist, i));
+            }
+            http_get(str_);
+            break;
+    }
 }
 
 #define net_buffer_to_dslist
@@ -773,10 +871,11 @@ return list;
 */
 globalvar net_vars;
 var net_cmds;
-net_cmds =              ds_map_find_value(net_vars, "net_cmds");
+net_cmds = ds_map_find_value(net_vars, "net_cmds");
 if (argument_count>=1) {
     var list;
     list = ds_list_create();
     for (var i=0; i<argument_count; i++) ds_list_add(list, argument[i]);
     ds_list_add(net_cmds, list);
 }
+

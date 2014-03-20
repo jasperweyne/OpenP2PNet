@@ -3,10 +3,8 @@
 ** RETURN VALUES **
 *******************
 **   1: Message correctly handled
-**   0: Error
-**  -1: Unknown protocol
-**  -2: OPENP2PNET implementation is outdated
-** any: Unknown OPENP2PNET Message, return value is message type
+**   0: Error in message or unknown protocol
+**  -1: Unknown message ID
 */
 globalvar net_vars;
 var net_key;
@@ -30,22 +28,39 @@ net_msglist =           ds_map_find_value(net_vars, "net_msglist");
 net_idcounter =         ds_map_find_value(net_vars, "net_idcounter");
 net_lanserver =         ds_map_find_value(net_vars, "net_lanserver");
 net_pubserver =         ds_map_find_value(net_vars, "net_pubserver");
-var recvlist, recvip, recvport, recvsocket, recvmsg, recvtype, recvkey, recvname, recvtokey, recvsignature, recvtime, recvhash, datalist, datastart;
+var recvlist, recvheaders, recvip, recvport, recvsocket, recvmsg, recvtype, recvkey, recvname, recvtokey, recvtime, recvhash, datalist, datastart;
 
 recvlist = argument1;
-if (string_copy(ds_list_find_value(recvlist, 0), 1, 12)!="[OPENP2PNET]") return -1;
-if (string_delete(ds_list_find_value(recvlist, 0), 1, 12)!="[v0.1.0.0]") return -2;
 recvip = argument2;
 recvport = argument3;
 recvsocket = argument4;
-recvmsg = real(ds_list_find_value(recvlist, 1));
-recvtype = real(ds_list_find_value(recvlist, 2));
-recvkey = ds_list_find_value(recvlist, 3);
-recvname = ds_list_find_value(recvlist, 4);
-recvsignature = ds_list_find_value(recvlist, 5);
-recvtokey = ds_list_find_value(recvlist, 6);
-recvtime = ds_list_find_value(recvlist, 7);
-datastart = 8;
+
+//Add headers to map
+if (ds_list_find_value(recvlist, 0)!="[OPENP2PNET]") return 0;
+var dsMap = ds_map_create();
+for (var i=1; ds_list_find_value(recvlist, i)!="[DATA]"; i++) {
+    var mapstr, key, val;
+    mapstr = ds_list_find_value(recvlist, i);
+    key = string_copy(mapstr, 1, string_pos(":", mapstr)-1);
+    val = string_delete(mapstr, 1, string_pos(":", mapstr));
+    ds_map_add(dsMap, key, val);
+}
+datastart = i+1;
+
+//Check dependency vars (type, key, tokey, time)
+if (ds_map_exists(dsMap, "type")==false  || ds_map_exists(dsMap, "srckey")==false  || ds_map_exists(dsMap, "key")==false  || ds_map_exists(dsMap, "time")==false) {
+    ds_map_destroy(dsMap);
+    return 0;
+} else {
+    recvtype = ds_map_find_value(dsMap, "type");
+    recvkey = ds_map_find_value(dsMap, "srckey");
+    recvtokey = ds_map_find_value(dsMap, "key");
+    recvtime = ds_map_find_value(dsMap, "time");
+    if (ds_map_exists(dsMap, "msg")==true) recvmsg = ds_map_find_value(dsMap, "msg"); else recvmsg = 0;
+    if (ds_map_exists(dsMap, "srcname")==true) recvname = ds_map_find_value(dsMap, "srcname"); else recvname = "?";
+    recvheaders = ds_map_write(dsMap);
+    ds_map_destroy(dsMap);
+}
 
 //Check signature
 //pass
@@ -126,27 +141,49 @@ switch (recvtype) {
 while (recvmsg==MSG_FORWARD) {
     recvip = ds_list_find_value(recvlist, datastart);
     recvport = real(ds_list_find_value(recvlist, datastart+1));
-    if (string_copy(ds_list_find_value(recvlist, datastart+2), 1, 12)!="[OPENP2PNET]") return -1;
-    if (string_delete(ds_list_find_value(recvlist, datastart+2), 1, 12)!="[v0.1.0.0]") return -2;
-    recvmsg = real(ds_list_find_value(recvlist, datastart+3));
-    recvtype = real(ds_list_find_value(recvlist, datastart+4));
-    recvkey = ds_list_find_value(recvlist, datastart+5);
-    recvname = ds_list_find_value(recvlist, datastart+6);
-    recvsignature = ds_list_find_value(recvlist, datastart+7);
-    recvtokey = ds_list_find_value(recvlist, datastart+8);
-    recvtime = ds_list_find_value(recvlist, datastart+9);
-    datastart += 10;
+    
+    //Add headers to map
+    if (ds_list_find_value(recvlist, datastart+2)!="[OPENP2PNET]") return 0;
+    var dsMap = ds_map_create();
+    for (var i=datastart+3; ds_list_find_value(recvlist, i)!="[DATA]"; i++) {
+        var mapstr, key, val;
+        mapstr = ds_list_find_value(recvlist, i);
+        key = string_copy(mapstr, 1, string_pos(":", mapstr)-1);
+        val = string_delete(mapstr, 1, string_pos(":", mapstr));
+        ds_map_add(dsMap, key, val);
+    }
+    datastart = i+1;
+    
+    //Check dependency vars (type, key, tokey, time)
+    if (ds_map_exists(dsMap, "type")==false  || ds_map_exists(dsMap, "srckey")==false  || ds_map_exists(dsMap, "key")==false  || ds_map_exists(dsMap, "time")==false) {
+        ds_map_destroy(dsMap);
+        return 0;
+    } else {
+        recvtype = ds_map_find_value(dsMap, "type");
+        recvkey = ds_map_find_value(dsMap, "srckey");
+        recvtokey = ds_map_find_value(dsMap, "key");
+        recvtime = ds_map_find_value(dsMap, "time");
+        if (ds_map_exists(dsMap, "msg")==true) recvmsg = ds_map_find_value(dsMap, "msg"); else recvmsg = 0;
+        if (ds_map_exists(dsMap, "srcname")==true) recvname = ds_map_find_value(dsMap, "srcname"); else recvname = "?";
+        recvheaders = ds_map_write(dsMap);
+        ds_map_destroy(dsMap);
+    }
+    
     
     //Add current peer in chain
-    if (ds_list_find_index(net_peer_key, recvkey)<0) net_connect(recvtype, recvip, recvport);
+    if (ds_list_find_index(net_peer_key, recvkey)<0) {
+        var pos = ds_list_find_index(net_peer_id, net_connect(recvtype, recvip, recvport));
+        ds_list_replace(net_peer_key, pos, recvkey);
+        ds_list_replace(net_peer_name, pos, recvname);
+    }
     
     //Quit when no message provided
     if (ds_list_size(recvlist)==datastart) return 1;
 }
 
 //Discard when known
-var hashstr = "";
-for (i=datastart-2; i<ds_list_size(recvlist); i++) {
+var hashstr = recvtokey+recvtime;
+for (i=datastart; i<ds_list_size(recvlist); i++) {
     hashstr += ds_list_find_value(recvlist, i);
 }
 recvhash = sha1_string_unicode(hashstr);
@@ -277,5 +314,5 @@ switch (recvmsg) {
         return 1;
         
     default:
-        return recvmsg;
+        return -1;
 }
