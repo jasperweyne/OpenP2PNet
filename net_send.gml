@@ -28,12 +28,12 @@ if (destid<0) {
     buffer = buffer_create(1, buffer_grow, 1);
     buffer_seek(buffer, buffer_seek_start, 0);
     buffer_write(buffer, buffer_string, "[OPENP2PNET]");
-    buffer_write(buffer, buffer_string, string(msgtype));
-    buffer_write(buffer, buffer_string, string(conntype));
-    buffer_write(buffer, buffer_string, net_key);
-    buffer_write(buffer, buffer_string, net_name);
-    buffer_write(buffer, buffer_string, destkey);
-    buffer_write(buffer, buffer_string, time);
+    buffer_write(buffer, buffer_string, "msg:"+string(msgtype));
+    buffer_write(buffer, buffer_string, "type:"+string(conntype));
+    buffer_write(buffer, buffer_string, "srckey:"+net_key);
+    buffer_write(buffer, buffer_string, "srcname:"+net_name);
+    buffer_write(buffer, buffer_string, "key:"+destkey);
+    buffer_write(buffer, buffer_string, "time"+time);
     buffer_write(buffer, buffer_string, "[DATA]");
     for (var i=0; i<ds_list_size(datalist); i++) {
         buffer_write(buffer, buffer_string, string(ds_list_find_value(datalist, i)));
