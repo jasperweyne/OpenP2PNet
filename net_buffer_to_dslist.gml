@@ -7,7 +7,7 @@ var list = argument1;
 buffer_seek(buffer, buffer_seek_start, 0);
 while (buffer_tell(buffer)<size) {
     var val = buffer_read(buffer, buffer_string);
-    ds_list_add(list, val);
+    if (val!="") ds_list_add(list, val);
 }
 
 buffer_delete(buffer);
