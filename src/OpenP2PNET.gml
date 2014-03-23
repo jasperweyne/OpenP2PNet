@@ -165,6 +165,10 @@ ds_map_replace(net_vars, "net_timer", net_timer);
 **  -1: Unknown message ID
 */
 globalvar net_vars;
+
+//Test whether package empty
+if (ds_list_size(argument1)==0) return 1;
+
 var net_key;
 var net_peer_id, net_peer_key, net_peer_ip, net_peer_port, net_peer_nettype, net_peer_name, net_peer_ping, net_peer_lastping, net_peer_pingrecv, net_peer_type, net_peer_socket;
 var net_msglist, net_idcounter;
@@ -681,6 +685,7 @@ net_disconnect(net_idcounter);
 globalvar net_vars;
 var net_key, net_name;
 var net_peer_id, net_peer_key, net_peer_ip, net_peer_port, net_peer_nettype, net_peer_name, net_peer_ping, net_peer_lastping, net_peer_pingrecv, net_peer_type, net_peer_socket;
+var net_lanserver;
 net_key =               ds_map_find_value(net_vars, "net_key");
 net_name =              ds_map_find_value(net_vars, "net_name");
 net_peer_id =           ds_map_find_value(net_vars, "net_peer_id");
@@ -694,6 +699,7 @@ net_peer_lastping =     ds_map_find_value(net_vars, "net_peer_lastping");
 net_peer_pingrecv =     ds_map_find_value(net_vars, "net_peer_pingrecv");
 net_peer_type =         ds_map_find_value(net_vars, "net_peer_type");
 net_peer_socket =       ds_map_find_value(net_vars, "net_peer_socket");
+net_lanserver =         ds_map_find_value(net_vars, "net_lanserver");
 
 var destid, pos, msgtype, datalist;
 var destkey, conntype, url, port, socket, time, buffer, str_;
@@ -708,16 +714,16 @@ if (destid<0) {
     buffer_seek(buffer, buffer_seek_start, 0);
     buffer_write(buffer, buffer_string, "[OPENP2PNET]");
     buffer_write(buffer, buffer_string, "msg:"+string(msgtype));
-    buffer_write(buffer, buffer_string, "type:"+string(conntype));
+    buffer_write(buffer, buffer_string, "type:"+string(NET_BROADCAST));
     buffer_write(buffer, buffer_string, "srckey:"+net_key);
     buffer_write(buffer, buffer_string, "srcname:"+net_name);
-    buffer_write(buffer, buffer_string, "key:"+destkey);
-    buffer_write(buffer, buffer_string, "time"+time);
+    buffer_write(buffer, buffer_string, "key:-1");
+    buffer_write(buffer, buffer_string, "time:"+time);
     buffer_write(buffer, buffer_string, "[DATA]");
     for (var i=0; i<ds_list_size(datalist); i++) {
         buffer_write(buffer, buffer_string, string(ds_list_find_value(datalist, i)));
     }
-    network_send_broadcast(socket, port, buffer, buffer_get_size(buffer));
+    network_send_broadcast(net_lanserver, port, buffer, buffer_get_size(buffer));
     buffer_delete(buffer);
 } else if (destid==0 || ds_list_find_index(net_peer_id, destid)<0) {
     for (pos=0; pos<ds_list_size(net_peer_id); pos++) {
@@ -738,7 +744,7 @@ if (destid<0) {
                 buffer_write(buffer, buffer_string, "srckey:"+net_key);
                 buffer_write(buffer, buffer_string, "srcname:"+net_name);
                 buffer_write(buffer, buffer_string, "key:"+destkey);
-                buffer_write(buffer, buffer_string, "time"+time);
+                buffer_write(buffer, buffer_string, "time:"+time);
                 buffer_write(buffer, buffer_string, "[DATA]");
                 for (var i=0; i<ds_list_size(datalist); i++) {
                     buffer_write(buffer, buffer_string, string(ds_list_find_value(datalist, i)));
@@ -830,7 +836,7 @@ var list = argument1;
 buffer_seek(buffer, buffer_seek_start, 0);
 while (buffer_tell(buffer)<size) {
     var val = buffer_read(buffer, buffer_string);
-    ds_list_add(list, val);
+    if (val!="") ds_list_add(list, val);
 }
 
 buffer_delete(buffer);
