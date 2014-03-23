@@ -162,7 +162,7 @@ ds_map_replace(net_vars, "net_timer", net_timer);
 *******************
 **   1: Message correctly handled
 **   0: Error in message or unknown protocol
-**  -1: Unknown message ID
+**  <0: Unknown message ID, abs(val) is ds_map containing headers (make sure to remove after use!)
 */
 globalvar net_vars;
 
@@ -214,12 +214,23 @@ if (ds_map_exists(dsMap, "type")==false  || ds_map_exists(dsMap, "srckey")==fals
     ds_map_destroy(dsMap);
     return 0;
 } else {
-    recvtype = ds_map_find_value(dsMap, "type");
+    var typeval = real(ds_map_find_value(dsMap, "type"));
+    ds_map_replace(dsMap, "type", val);
+    recvtype = val;
     recvkey = ds_map_find_value(dsMap, "srckey");
     recvtokey = ds_map_find_value(dsMap, "key");
     recvtime = ds_map_find_value(dsMap, "time");
-    if (ds_map_exists(dsMap, "msg")==true) recvmsg = ds_map_find_value(dsMap, "msg"); else recvmsg = 0;
+    if (ds_map_exists(dsMap, "msg")==true) {
+        var msgval = real(ds_map_find_value(dsMap, "msg"));
+        ds_map_replace(dsMap, "msg", val);
+        recvmsg = val;
+    } else {
+        recvmsg = 0;
+    }
     if (ds_map_exists(dsMap, "srcname")==true) recvname = ds_map_find_value(dsMap, "srcname"); else recvname = "?";
+    ds_map_add(dsMap, "ip", recvip);
+    ds_map_add(dsMap, "port", recvport);
+    ds_map_add(dsMap, "datastart", datastart);
     recvheaders = ds_map_write(dsMap);
     ds_map_destroy(dsMap);
 }
@@ -321,12 +332,23 @@ while (recvmsg==MSG_FORWARD) {
         ds_map_destroy(dsMap);
         return 0;
     } else {
-        recvtype = ds_map_find_value(dsMap, "type");
+        var typeval = real(ds_map_find_value(dsMap, "type"));
+        ds_map_replace(dsMap, "type", val);
+        recvtype = val;
         recvkey = ds_map_find_value(dsMap, "srckey");
         recvtokey = ds_map_find_value(dsMap, "key");
         recvtime = ds_map_find_value(dsMap, "time");
-        if (ds_map_exists(dsMap, "msg")==true) recvmsg = ds_map_find_value(dsMap, "msg"); else recvmsg = 0;
+        if (ds_map_exists(dsMap, "msg")==true) {
+            var msgval = real(ds_map_find_value(dsMap, "msg"));
+            ds_map_replace(dsMap, "msg", val);
+            recvmsg = val;
+        } else {
+            recvmsg = 0;
+        }
         if (ds_map_exists(dsMap, "srcname")==true) recvname = ds_map_find_value(dsMap, "srcname"); else recvname = "?";
+        ds_map_add(dsMap, "ip", recvip);
+        ds_map_add(dsMap, "port", recvport);
+        ds_map_add(dsMap, "datastart", datastart);
         recvheaders = ds_map_write(dsMap);
         ds_map_destroy(dsMap);
     }
@@ -476,7 +498,9 @@ switch (recvmsg) {
         return 1;
         
     default:
-        return -1;
+        var dsMap = ds_map_create();
+        ds_map_read(dsMap, recvheaders);
+        return -dsMap;
 }
 
 #define net_connect
