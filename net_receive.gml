@@ -7,6 +7,10 @@
 **  -1: Unknown message ID
 */
 globalvar net_vars;
+
+//Test whether package empty
+if (ds_list_size(argument1)==0) return 1;
+
 var net_key;
 var net_peer_id, net_peer_key, net_peer_ip, net_peer_port, net_peer_nettype, net_peer_name, net_peer_ping, net_peer_lastping, net_peer_pingrecv, net_peer_type, net_peer_socket;
 var net_msglist, net_idcounter;
