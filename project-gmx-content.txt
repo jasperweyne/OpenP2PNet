@@ -4,7 +4,6 @@
       <script>scripts\OpenP2PNET\net_receive.gml</script>
       <script>scripts\OpenP2PNET\net_connect.gml</script>
       <script>scripts\OpenP2PNET\net_disconnect.gml</script>
-      <script>scripts\OpenP2PNET\net_push.gml</script>
       <script>scripts\OpenP2PNET\net_send.gml</script>
       <script>scripts\OpenP2PNET\net_buffer_to_dslist.gml</script>
       <script>scripts\OpenP2PNET\net_string_to_dslist.gml</script>

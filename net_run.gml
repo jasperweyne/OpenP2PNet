@@ -1,6 +1,6 @@
 globalvar net_vars;
 var net_interval;
-var net_peer_id, net_peer_key, net_peer_ip, net_peer_port, net_peer_nettype, net_peer_name, net_peer_ping, net_peer_lastping, net_peer_pingrecv, net_peer_type, net_peer_socket;
+var net_peer_id, net_peer_key, net_peer_ip, net_peer_port, net_peer_nettype, net_peer_name, net_peer_ping, net_peer_lastping, net_peer_pingrecv, net_peer_type, net_peer_socket, net_peer_typeid;
 var net_cmdlist;
 var net_devicemaster, net_devicemasterid, net_timer;
 //Download vars
@@ -16,6 +16,7 @@ net_peer_lastping =     ds_map_find_value(net_vars, "net_peer_lastping");
 net_peer_pingrecv =     ds_map_find_value(net_vars, "net_peer_pingrecv");
 net_peer_type =         ds_map_find_value(net_vars, "net_peer_type");
 net_peer_socket =       ds_map_find_value(net_vars, "net_peer_socket");
+net_peer_typeid =       ds_map_find_value(net_vars, "net_peer_typeid");
 net_cmdlist =           ds_map_find_value(net_vars, "net_cmdlist");
 net_devicemaster =      ds_map_find_value(net_vars, "net_devicemaster");
 net_devicemasterid =    ds_map_find_value(net_vars, "net_devicemasterid");
@@ -24,7 +25,7 @@ var outputlist = ds_list_create();
 
 if (net_timer==0) {
     ds_list_clear(outputlist);
-    net_push(NET_BROADCAST, -1, 6510, "-1", MSG_INFO, outputlist);
+    net_send(-6510, MSG_INFO, outputlist);
     if (net_devicemaster==false) {
         ds_list_clear(outputlist);
         net_send(net_devicemasterid, MSG_PEERREQUEST, outputlist);

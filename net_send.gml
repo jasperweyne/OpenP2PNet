@@ -37,7 +37,7 @@ if (destid<0) {
     buffer_write(buffer, buffer_string, "srcname:"+net_name);
     buffer_write(buffer, buffer_string, "key:-1");
     buffer_write(buffer, buffer_string, "time:"+time);
-    buffer_write(buffer, buffer_string, "compatible:"+net_compatible);
+    buffer_write(buffer, buffer_string, "typeid:"+string(game_id));
     buffer_write(buffer, buffer_string, "[DATA]");
     for (var i=0; i<ds_list_size(datalist); i++) {
         buffer_write(buffer, buffer_string, string(ds_list_find_value(datalist, i)));
@@ -64,7 +64,7 @@ if (destid<0) {
                 buffer_write(buffer, buffer_string, "srcname:"+net_name);
                 buffer_write(buffer, buffer_string, "key:"+destkey);
                 buffer_write(buffer, buffer_string, "time:"+time);
-                buffer_write(buffer, buffer_string, "compatible:"+net_compatible);
+                buffer_write(buffer, buffer_string, "typeid:"+string(game_id));
                 buffer_write(buffer, buffer_string, "[DATA]");
                 for (var i=0; i<ds_list_size(datalist); i++) {
                     buffer_write(buffer, buffer_string, string(ds_list_find_value(datalist, i)));
@@ -81,14 +81,14 @@ if (destid<0) {
                 buffer_delete(buffer);
                 break;
             case NET_HTTP:
-                str_ = "[OPENP2PNET]"+chr(10)
+                str_ = "[OPENP2PNET]"+chr(10);
                 str_ += "msg:"+string(msgtype)+chr(10);
                 str_ += "type:"+string(conntype)+chr(10);
                 str_ += "srckey:"+net_key+chr(10);
                 str_ += "srcname:"+net_name+chr(10);
                 str_ += "key:"+destkey+chr(10);
                 str_ += "time:"+time+chr(10);
-                str_ += "compatible:"+net_compatible+chr(10);
+                str_ += "typeid:"+string(game_id)+chr(10);
                 str_ += "[DATA]";
                 for (var i=0; i<ds_list_size(datalist); i++) {
                     str_ += chr(10)+string(ds_list_find_value(datalist, i));
@@ -118,7 +118,7 @@ if (destid<0) {
             buffer_write(buffer, buffer_string, "srcname:"+net_name);
             buffer_write(buffer, buffer_string, "key:"+destkey);
             buffer_write(buffer, buffer_string, "time:"+time);
-            buffer_write(buffer, buffer_string, "compatible:"+net_compatible);
+            buffer_write(buffer, buffer_string, "typeid:"+string(game_id));
             buffer_write(buffer, buffer_string, "[DATA]");
             for (var i=0; i<ds_list_size(datalist); i++) {
                 buffer_write(buffer, buffer_string, string(ds_list_find_value(datalist, i)));
@@ -142,7 +142,7 @@ if (destid<0) {
             str_ += "srcname:"+net_name+chr(10);
             str_ += "key:"+destkey+chr(10);
             str_ += "time:"+time+chr(10);
-            str_ += "compatible:"+net_compatible+chr(10);
+            str_ += "typeid:"+string(game_id)+chr(10);
             str_ += "[DATA]";
             for (var i=0; i<ds_list_size(datalist); i++) {
                 str_ += chr(10)+string(ds_list_find_value(datalist, i));

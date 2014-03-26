@@ -12,7 +12,7 @@ globalvar net_vars;
 if (ds_list_size(argument1)==0) return 1;
 
 var net_key;
-var net_peer_id, net_peer_key, net_peer_ip, net_peer_port, net_peer_nettype, net_peer_name, net_peer_ping, net_peer_lastping, net_peer_pingrecv, net_peer_type, net_peer_socket;
+var net_peer_id, net_peer_key, net_peer_ip, net_peer_port, net_peer_nettype, net_peer_name, net_peer_ping, net_peer_lastping, net_peer_pingrecv, net_peer_type, net_peer_socket, net_peer_typeid;
 var net_msglist, net_idcounter;
 var net_lanserver, net_pubserver;
 //Download vars
@@ -28,11 +28,12 @@ net_peer_lastping =     ds_map_find_value(net_vars, "net_peer_lastping");
 net_peer_pingrecv =     ds_map_find_value(net_vars, "net_peer_pingrecv");
 net_peer_type =         ds_map_find_value(net_vars, "net_peer_type");
 net_peer_socket =       ds_map_find_value(net_vars, "net_peer_socket");
+net_peer_typeid =       ds_map_find_value(net_vars, "net_peer_typeid");
 net_msglist =           ds_map_find_value(net_vars, "net_msglist");
 net_idcounter =         ds_map_find_value(net_vars, "net_idcounter");
 net_lanserver =         ds_map_find_value(net_vars, "net_lanserver");
 net_pubserver =         ds_map_find_value(net_vars, "net_pubserver");
-var recvlist, recvheaders, recvip, recvport, recvsocket, recvmsg, recvtype, recvkey, recvname, recvtokey, recvtime, recvhash, datalist, datastart;
+var recvlist, recvheaders, recvip, recvport, recvsocket, recvmsg, recvtype, recvkey, recvname, recvtypeid, recvtokey, recvtime, recvhash, datalist, datastart;
 
 recvlist = argument1;
 recvip = argument2;
@@ -70,6 +71,7 @@ if (ds_map_exists(dsMap, "type")==false  || ds_map_exists(dsMap, "srckey")==fals
         recvmsg = 0;
     }
     if (ds_map_exists(dsMap, "srcname")==true) recvname = ds_map_find_value(dsMap, "srcname"); else recvname = "?";
+    if (ds_map_exists(dsMap, "typeid")==true) recvtypeid = ds_map_find_value(dsMap, "typeid"); else recvtypeid = "?";
     ds_map_add(dsMap, "ip", recvip);
     ds_map_add(dsMap, "port", recvport);
     ds_map_add(dsMap, "datastart", datastart);
@@ -100,6 +102,7 @@ switch (recvtype) {
                 ds_list_add(net_peer_pingrecv, 0);
                 ds_list_add(net_peer_type, NETTYPE_PEER);
                 ds_list_add(net_peer_socket, recvsocket);
+                ds_list_add(net_peer_typeid, "?");
             } else {
                 //Disconnect
                 pos = ds_list_find_index(net_peer_socket, recvsocket);
@@ -114,13 +117,15 @@ switch (recvtype) {
                 ds_list_delete(net_peer_pingrecv, pos);
                 ds_list_delete(net_peer_type, pos);
                 ds_list_delete(net_peer_socket, pos);
+                ds_list_delete(net_peer_typeid, pos);
             }
             return 1;
         } else {
             var pos = ds_list_find_index(net_peer_socket, recvsocket);
             if (pos>=0) {
-                if (string_copy(ds_list_find_value(net_peer_key, pos), 1, 1)=="?") ds_list_replace(net_peer_key, pos, recvkey);
+                if (ds_list_find_value(net_peer_key, pos)=="?") ds_list_replace(net_peer_key, pos, recvkey);
                 if (ds_list_find_value(net_peer_name, pos)=="?") ds_list_replace(net_peer_name, pos, recvname);
+                if (ds_list_find_value(net_peer_typeid, pos)=="?") ds_list_replace(net_peer_typeid, pos, recvtypeid);
             }
         }
         break;
@@ -143,11 +148,15 @@ switch (recvtype) {
             ds_list_add(net_peer_pingrecv, 0);
             ds_list_add(net_peer_type, NETTYPE_PEER);
             ds_list_add(net_peer_socket, recvsocket);
-        } else if (ds_list_find_value(net_peer_key, ds_list_find_index(net_peer_socket, recvsocket))=="?") {
+            ds_list_add(net_peer_typeid, recvtypeid);
+        } else {
             //Connect (Src: outgoing)
             var pos = ds_list_find_index(net_peer_socket, recvsocket);
-            ds_list_replace(net_peer_key, pos, recvkey);
-            ds_list_replace(net_peer_name, pos, recvname);
+            if (pos>=0) {
+                if (ds_list_find_value(net_peer_key, pos)=="?") ds_list_replace(net_peer_key, pos, recvkey);
+                if (ds_list_find_value(net_peer_name, pos)=="?") ds_list_replace(net_peer_name, pos, recvname);
+                if (ds_list_find_value(net_peer_typeid, pos)=="?") ds_list_replace(net_peer_typeid, pos, recvtypeid);
+            }
         }
         break;
 }
@@ -188,6 +197,7 @@ while (recvmsg==MSG_FORWARD) {
             recvmsg = 0;
         }
         if (ds_map_exists(dsMap, "srcname")==true) recvname = ds_map_find_value(dsMap, "srcname"); else recvname = "?";
+        if (ds_map_exists(dsMap, "typeid")==true) recvtypeid = ds_map_find_value(dsMap, "typeid"); else recvtypeid = "?";
         ds_map_add(dsMap, "ip", recvip);
         ds_map_add(dsMap, "port", recvport);
         ds_map_add(dsMap, "datastart", datastart);
@@ -201,6 +211,7 @@ while (recvmsg==MSG_FORWARD) {
         var pos = ds_list_find_index(net_peer_id, net_connect(recvtype, recvip, recvport));
         ds_list_replace(net_peer_key, pos, recvkey);
         ds_list_replace(net_peer_name, pos, recvname);
+        ds_list_replace(net_peer_typeid, pos, recvtypeid);
     }
     
     //Quit when no message provided
@@ -279,56 +290,53 @@ switch (recvmsg) {
         
     case MSG_PEERREQUEST:
         ///SERVER
-        var transfer_key, transfer_ip, transfer_port, transfer_nettype;
-        transfer_key = ds_list_create();
-        ds_list_copy(transfer_key, net_peer_key);
-        transfer_ip = ds_list_create();
-        ds_list_copy(transfer_ip, net_peer_ip);
-        transfer_port = ds_list_create();
-        ds_list_copy(transfer_port, net_peer_port);
-        transfer_nettype = ds_list_create();
-        ds_list_copy(transfer_nettype, net_peer_nettype);
-        
-        datalist = ds_list_create();
-        ds_list_add(datalist, ds_list_write(transfer_key));
-        ds_list_add(datalist, ds_list_write(transfer_ip));
-        ds_list_add(datalist, ds_list_write(transfer_port));
-        ds_list_add(datalist, ds_list_write(transfer_nettype));
+        var datalist = ds_list_create();
+        ds_list_add(datalist, ds_list_write(net_peer_key));
+        ds_list_add(datalist, ds_list_write(net_peer_ip));
+        ds_list_add(datalist, ds_list_write(net_peer_port));
+        ds_list_add(datalist, ds_list_write(net_peer_name));
+        ds_list_add(datalist, ds_list_write(net_peer_nettype));
+        ds_list_add(datalist, ds_list_write(net_peer_typeid));
         pos = ds_list_find_index(net_peer_socket, recvsocket);
         net_send(ds_list_find_value(net_peer_id, pos), MSG_PEERTRANSFER, datalist);
         ds_list_destroy(datalist);
-        ds_list_destroy(transfer_key);
-        ds_list_destroy(transfer_ip);
-        ds_list_destroy(transfer_port);
-        ds_list_destroy(transfer_nettype);
         return 1;
         
     case MSG_PEERTRANSFER:
         ///CLIENT
-        var transfer_key, transfer_ip, transfer_port, transfer_nettype;
+        var transfer_key, transfer_ip, transfer_port, transfer_name, transfer_nettype, transfer_typeid;
         transfer_key = ds_list_create();
         transfer_ip = ds_list_create();
         transfer_port = ds_list_create();
-        transfer_type = ds_list_create();
+        transfer_name = ds_list_create();
+        transfer_nettype = ds_list_create();
+        transfer_typeid = ds_list_create();
         
         ds_list_read(transfer_key, ds_list_find_value(recvlist, datastart));
         ds_list_read(transfer_ip, ds_list_find_value(recvlist, datastart+1));
         ds_list_read(transfer_port, ds_list_find_value(recvlist, datastart+2));
-        ds_list_read(transfer_nettype, ds_list_find_value(recvlist, datastart+3));
+        ds_list_read(transfer_name, ds_list_find_value(recvlist, datastart+3));
+        ds_list_read(transfer_nettype, ds_list_find_value(recvlist, datastart+4));
+        ds_list_read(transfer_typeid, ds_list_find_value(recvlist, datastart+5));
         
-        pos = ds_list_find_index(transfer_key, net_key);
+        var pos = ds_list_find_index(transfer_key, net_key);
         ds_list_delete(transfer_key, pos);
         ds_list_delete(transfer_ip, pos);
         ds_list_delete(transfer_port, pos);
+        ds_list_delete(transfer_name, pos);
         ds_list_delete(transfer_nettype, pos);
+        ds_list_delete(transfer_typeid, pos);
         
         for (var i=0; i<ds_list_size(transfer_key); i++) {
-            if (ds_list_find_index(net_lan_key, ds_list_find_value(lantransfer_key, i))<0) {
-                var nettype, ip, port;
+            if (ds_list_find_index(net_lan_key, ds_list_find_value(transfer_key, i))<0) {
+                var nettype, ip, port, pos;
                 nettype = ds_list_find_value(transfer_nettype, i);
                 ip = ds_list_find_value(transfer_ip, i);
                 port = ds_list_find_value(transfer_port, i);
-                net_connect(nettype,ip,port);
+                pos = net_connect(nettype,ip,port);
+                ds_list_replace(net_peer_key, pos, ds_list_find_value(transfer_port, i));
+                ds_list_replace(net_peer_name, pos, ds_list_find_value(transfer_name, i));
+                ds_list_replace(net_peer_typeid, pos, ds_list_find_value(transfer_typeid, i));
                 show_debug_message("Added peer on "+ip+":"+string(port));
             }
         }
@@ -336,7 +344,9 @@ switch (recvmsg) {
         ds_list_destroy(transfer_key);
         ds_list_destroy(transfer_ip);
         ds_list_destroy(transfer_port);
+        ds_list_destroy(transfer_name);
         ds_list_destroy(transfer_nettype);
+        ds_list_destroy(transfer_typeid);
         return 1;
         
     default:
