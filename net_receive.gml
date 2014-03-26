@@ -57,15 +57,15 @@ if (ds_map_exists(dsMap, "type")==false  || ds_map_exists(dsMap, "srckey")==fals
     return 0;
 } else {
     var typeval = real(ds_map_find_value(dsMap, "type"));
-    ds_map_replace(dsMap, "type", val);
-    recvtype = val;
+    ds_map_replace(dsMap, "type", typeval);
+    recvtype = typeval;
     recvkey = ds_map_find_value(dsMap, "srckey");
     recvtokey = ds_map_find_value(dsMap, "key");
     recvtime = ds_map_find_value(dsMap, "time");
     if (ds_map_exists(dsMap, "msg")==true) {
         var msgval = real(ds_map_find_value(dsMap, "msg"));
-        ds_map_replace(dsMap, "msg", val);
-        recvmsg = val;
+        ds_map_replace(dsMap, "msg", msgval);
+        recvmsg = msgval;
     } else {
         recvmsg = 0;
     }
@@ -175,15 +175,15 @@ while (recvmsg==MSG_FORWARD) {
         return 0;
     } else {
         var typeval = real(ds_map_find_value(dsMap, "type"));
-        ds_map_replace(dsMap, "type", val);
-        recvtype = val;
+        ds_map_replace(dsMap, "type", typeval);
+        recvtype = typeval;
         recvkey = ds_map_find_value(dsMap, "srckey");
         recvtokey = ds_map_find_value(dsMap, "key");
         recvtime = ds_map_find_value(dsMap, "time");
         if (ds_map_exists(dsMap, "msg")==true) {
             var msgval = real(ds_map_find_value(dsMap, "msg"));
-            ds_map_replace(dsMap, "msg", val);
-            recvmsg = val;
+            ds_map_replace(dsMap, "msg", msgval);
+            recvmsg = msgval;
         } else {
             recvmsg = 0;
         }
