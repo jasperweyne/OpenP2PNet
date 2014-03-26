@@ -78,16 +78,18 @@ if (destid<0) {
                 buffer_delete(buffer);
                 break;
             case NET_HTTP:
-                str_ = url+"?protocol=OpenP2PNet";
-                str_ += "&msg="+string(msgtype);
-                str_ += "&type="+string(conntype);
-                str_ += "&srckey="+net_key;
-                str_ += "&srcname="+net_name;
-                str_ += "&key="+destkey;
-                str_ += "&time="+time;
+                str_ = "[OPENP2PNET]"+chr(10)
+                str_ += "msg:"+string(msgtype)+chr(10);
+                str_ += "type:"+string(conntype)+chr(10);
+                str_ += "srckey:"+net_key+chr(10);
+                str_ += "srcname:"+net_name+chr(10);
+                str_ += "key:"+destkey+chr(10);
+                str_ += "time:"+time+chr(10);
+                str_ += "[DATA]";
                 for (var i=0; i<ds_list_size(datalist); i++) {
-                    str_ += "&OP2PNdata_"+string(i)+"="+string(ds_list_find_value(datalist, i));
+                    str_ += chr(10)+string(ds_list_find_value(datalist, i));
                 }
+                str_ = url+"?"+base64_encode(str_);
                 http_get(str_);
                 break;
         }
@@ -128,16 +130,18 @@ if (destid<0) {
             buffer_delete(buffer);
             break;
         case NET_HTTP:
-            str_ = url+"?protocol=OpenP2PNet";
-            str_ += "&msg="+string(msgtype);
-            str_ += "&type="+string(conntype);
-            str_ += "&srckey="+net_key;
-            str_ += "&srcname="+net_name;
-            str_ += "&key="+destkey;
-            str_ += "&time="+time;
+            str_ = "[OPENP2PNET]"+chr(10)
+            str_ += "msg:"+string(msgtype)+chr(10);
+            str_ += "type:"+string(conntype)+chr(10);
+            str_ += "srckey:"+net_key+chr(10);
+            str_ += "srcname:"+net_name+chr(10);
+            str_ += "key:"+destkey+chr(10);
+            str_ += "time:"+time+chr(10);
+            str_ += "[DATA]";
             for (var i=0; i<ds_list_size(datalist); i++) {
-                str_ += "&OP2PNdata_"+string(i)+"="+string(ds_list_find_value(datalist, i));
+                str_ += chr(10)+string(ds_list_find_value(datalist, i));
             }
+            str_ = url+"?"+base64_encode(str_);
             http_get(str_);
             break;
     }
