@@ -1,4 +1,4 @@
-///net_receive(eventtype,ds_list,ip,port,socket)
+///net_receive(netInst,eventtype,ds_list,ip,port,socket)
 /******************
 ** RETURN VALUES **
 *******************
@@ -6,10 +6,10 @@
 **   0: Error in message or unknown protocol
 **  <0: Unknown message ID, abs(val) is ds_map containing headers (make sure to remove after use!)
 */
-globalvar net_vars;
+var net_vars = argument0;
 
 //Test whether package empty
-if (ds_list_size(argument1)==0) return 1;
+if (ds_list_size(argument2)==0) return 1;
 
 var net_key;
 var net_peer_id, net_peer_key, net_peer_ip, net_peer_port, net_peer_nettype, net_peer_name, net_peer_ping, net_peer_lastping, net_peer_pingrecv, net_peer_type, net_peer_socket, net_peer_typeid;
@@ -33,12 +33,13 @@ net_msglist =           ds_map_find_value(net_vars, "net_msglist");
 net_idcounter =         ds_map_find_value(net_vars, "net_idcounter");
 net_lanserver =         ds_map_find_value(net_vars, "net_lanserver");
 net_pubserver =         ds_map_find_value(net_vars, "net_pubserver");
-var recvlist, recvheaders, recvip, recvport, recvsocket, recvmsg, recvtype, recvkey, recvname, recvtypeid, recvtokey, recvtime, recvhash, datalist, datastart;
+var recvevent, recvlist, recvheaders, recvip, recvport, recvsocket, recvmsg, recvtype, recvkey, recvname, recvtypeid, recvtokey, recvtime, recvhash, datalist, datastart;
 
-recvlist = argument1;
-recvip = argument2;
-recvport = argument3;
-recvsocket = argument4;
+recvevent = argument1;
+recvlist = argument2;
+recvip = argument3;
+recvport = argument4;
+recvsocket = argument5;
 
 //Add headers to map
 if (ds_list_find_value(recvlist, 0)!="[OPENP2PNET]") return 0;
@@ -86,8 +87,8 @@ if (ds_map_exists(dsMap, "type")==false  || ds_map_exists(dsMap, "srckey")==fals
 switch (recvtype) {
     case NET_TCP:
     case NET_TCPRAW:
-        if (argument0!=network_type_data) {
-            if (argument0==network_type_connect) {
+        if (recvevent!=network_type_data) {
+            if (recvevent==network_type_connect) {
                 //Connect
                 net_idcounter++;
                 ds_map_replace(net_vars, "net_idcounter", net_idcounter);
@@ -208,7 +209,7 @@ while (recvmsg==MSG_FORWARD) {
     
     //Add current peer in chain
     if (ds_list_find_index(net_peer_key, recvkey)<0) {
-        var pos = ds_list_find_index(net_peer_id, net_connect(recvtype, recvip, recvport));
+        var pos = ds_list_find_index(net_peer_id, net_connect(net_vars, recvtype, recvip, recvport));
         ds_list_replace(net_peer_key, pos, recvkey);
         ds_list_replace(net_peer_name, pos, recvname);
         ds_list_replace(net_peer_typeid, pos, recvtypeid);
@@ -239,10 +240,10 @@ if (recvtokey!=net_key && recvtokey!="-1") {
     ds_list_insert(fwdlist, 1, recvport);
     if (ds_list_find_index(net_peer_key, recvtokey)==-1 || ds_list_find_index(net_peer_key, recvkey)<0) {
         for (var i=0; i<ds_list_size(net_peer_key); i++) {
-            net_send(ds_list_find_value(net_peer_id, i), MSG_FORWARD, fwdlist);
+            net_send(net_vars, ds_list_find_value(net_peer_id, i), MSG_FORWARD, fwdlist);
         }
     } else {
-        net_send(recvtokey, recvmsg, recvlist);
+        net_send(net_vars, recvtokey, recvmsg, recvlist);
     }
     ds_list_destroy(fwdlist);
     return 1;
@@ -255,7 +256,7 @@ switch (recvmsg) {
         
     case MSG_DISCONN:
         ///SERVER
-        net_disconnect(recvkey);
+        net_disconnect(net_vars, recvkey);
         return 1;
         
     case MSG_PING:
@@ -263,7 +264,7 @@ switch (recvmsg) {
         datalist = ds_list_create();
         pos = ds_list_find_index(net_peer_socket, recvsocket);
         ds_list_add(datalist, ds_list_find_value(recvlist, datastart));
-        net_send(ds_list_find_value(net_peer_id, pos), MSG_PONG, datalist);
+        net_send(net_vars, ds_list_find_value(net_peer_id, pos), MSG_PONG, datalist);
         ds_list_destroy(datalist);
         return 1;
         
@@ -278,7 +279,7 @@ switch (recvmsg) {
         ///SERVER
         datalist = ds_list_create();
         pos = ds_list_find_index(net_peer_socket, recvsocket);
-        net_send(ds_list_find_value(net_peer_id, pos), MSG_INFO, datalist);
+        net_send(net_vars, ds_list_find_value(net_peer_id, pos), MSG_INFO, datalist);
         ds_list_destroy(datalist);
         return 1;
         
@@ -298,7 +299,7 @@ switch (recvmsg) {
         ds_list_add(datalist, ds_list_write(net_peer_nettype));
         ds_list_add(datalist, ds_list_write(net_peer_typeid));
         pos = ds_list_find_index(net_peer_socket, recvsocket);
-        net_send(ds_list_find_value(net_peer_id, pos), MSG_PEERTRANSFER, datalist);
+        net_send(net_vars, ds_list_find_value(net_peer_id, pos), MSG_PEERTRANSFER, datalist);
         ds_list_destroy(datalist);
         return 1;
         
@@ -333,7 +334,7 @@ switch (recvmsg) {
                 nettype = ds_list_find_value(transfer_nettype, i);
                 ip = ds_list_find_value(transfer_ip, i);
                 port = ds_list_find_value(transfer_port, i);
-                pos = net_connect(nettype,ip,port);
+                pos = net_connect(net_vars,nettype,ip,port);
                 ds_list_replace(net_peer_key, pos, ds_list_find_value(transfer_port, i));
                 ds_list_replace(net_peer_name, pos, ds_list_find_value(transfer_name, i));
                 ds_list_replace(net_peer_typeid, pos, ds_list_find_value(transfer_typeid, i));

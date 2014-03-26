@@ -1,5 +1,5 @@
-///net_send(id,msgtype,datalist)
-globalvar net_vars;
+///net_send(netInst,id,msgtype,datalist)
+var net_vars = argument0;
 var net_key, net_name, net_compatible;
 var net_peer_id, net_peer_key, net_peer_ip, net_peer_port, net_peer_nettype, net_peer_name, net_peer_ping, net_peer_lastping, net_peer_pingrecv, net_peer_type, net_peer_socket;
 var net_lanserver;
@@ -21,9 +21,9 @@ net_lanserver =         ds_map_find_value(net_vars, "net_lanserver");
 
 var destid, pos, msgtype, datalist;
 var destkey, conntype, url, port, socket, time, buffer, str_;
-destid = argument0;
-msgtype = argument1;
-datalist = argument2;
+destid = argument1;
+msgtype = argument2;
+datalist = argument3;
 time = string_replace(string_format(current_year, 4, 0)+string_format(current_month, 2, 0)+string_format(current_day, 2, 0)+string_format(current_hour, 2, 0)+string_format(current_minute, 2, 0)+string_format(current_second, 2, 0), " ", "0");
 
 if (destid<0) {

@@ -1,4 +1,5 @@
-globalvar net_vars;
+///net_run(netInst)
+var net_vars = argument0;
 var net_interval;
 var net_peer_id, net_peer_key, net_peer_ip, net_peer_port, net_peer_nettype, net_peer_name, net_peer_ping, net_peer_lastping, net_peer_pingrecv, net_peer_type, net_peer_socket, net_peer_typeid;
 var net_cmdlist;
@@ -25,10 +26,10 @@ var outputlist = ds_list_create();
 
 if (net_timer==0) {
     ds_list_clear(outputlist);
-    net_send(-6510, MSG_INFO, outputlist);
+    net_send(net_vars, -6510, MSG_INFO, outputlist);
     if (net_devicemaster==false) {
         ds_list_clear(outputlist);
-        net_send(net_devicemasterid, MSG_PEERREQUEST, outputlist);
+        net_send(net_vars, net_devicemasterid, MSG_PEERREQUEST, outputlist);
     }
     net_timer = net_interval;
 }
@@ -38,7 +39,7 @@ for (var i=0; i<ds_list_size(net_peer_lastping); i++) {
         ds_list_clear(outputlist);
         ds_list_add(outputlist, get_timer());
         var _id = ds_list_find_value(net_peer_id, i);
-        net_send(_id, MSG_PING, outputlist);
+        net_send(net_vars, _id, MSG_PING, outputlist);
         ds_list_replace(net_peer_lastping, i, get_timer());
     }
 }
@@ -58,7 +59,7 @@ if (ds_list_size(net_cmdlist)>0) {
                 if (ds_list_find_index(net_peer_id, _id)<0) break;
                 ds_list_clear(outputlist);
                 ds_list_add(outputlist, get_timer());
-                net_send(_id, MSG_PING, outputlist);
+                net_send(net_vars, _id, MSG_PING, outputlist);
                 break;
         }
         ds_list_destroy(execlist);
