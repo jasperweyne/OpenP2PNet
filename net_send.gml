@@ -1,10 +1,11 @@
 ///net_send(id,msgtype,datalist)
 globalvar net_vars;
-var net_key, net_name;
+var net_key, net_name, net_compatible;
 var net_peer_id, net_peer_key, net_peer_ip, net_peer_port, net_peer_nettype, net_peer_name, net_peer_ping, net_peer_lastping, net_peer_pingrecv, net_peer_type, net_peer_socket;
 var net_lanserver;
 net_key =               ds_map_find_value(net_vars, "net_key");
 net_name =              ds_map_find_value(net_vars, "net_name");
+net_compatible =        ds_map_find_value(net_vars, "net_compatible");
 net_peer_id =           ds_map_find_value(net_vars, "net_peer_id");
 net_peer_key =          ds_map_find_value(net_vars, "net_peer_key");
 net_peer_ip =           ds_map_find_value(net_vars, "net_peer_ip");
@@ -36,6 +37,7 @@ if (destid<0) {
     buffer_write(buffer, buffer_string, "srcname:"+net_name);
     buffer_write(buffer, buffer_string, "key:-1");
     buffer_write(buffer, buffer_string, "time:"+time);
+    buffer_write(buffer, buffer_string, "compatible:"+net_compatible);
     buffer_write(buffer, buffer_string, "[DATA]");
     for (var i=0; i<ds_list_size(datalist); i++) {
         buffer_write(buffer, buffer_string, string(ds_list_find_value(datalist, i)));
@@ -62,6 +64,7 @@ if (destid<0) {
                 buffer_write(buffer, buffer_string, "srcname:"+net_name);
                 buffer_write(buffer, buffer_string, "key:"+destkey);
                 buffer_write(buffer, buffer_string, "time:"+time);
+                buffer_write(buffer, buffer_string, "compatible:"+net_compatible);
                 buffer_write(buffer, buffer_string, "[DATA]");
                 for (var i=0; i<ds_list_size(datalist); i++) {
                     buffer_write(buffer, buffer_string, string(ds_list_find_value(datalist, i)));
@@ -85,6 +88,7 @@ if (destid<0) {
                 str_ += "srcname:"+net_name+chr(10);
                 str_ += "key:"+destkey+chr(10);
                 str_ += "time:"+time+chr(10);
+                str_ += "compatible:"+net_compatible+chr(10);
                 str_ += "[DATA]";
                 for (var i=0; i<ds_list_size(datalist); i++) {
                     str_ += chr(10)+string(ds_list_find_value(datalist, i));
@@ -114,6 +118,7 @@ if (destid<0) {
             buffer_write(buffer, buffer_string, "srcname:"+net_name);
             buffer_write(buffer, buffer_string, "key:"+destkey);
             buffer_write(buffer, buffer_string, "time:"+time);
+            buffer_write(buffer, buffer_string, "compatible:"+net_compatible);
             buffer_write(buffer, buffer_string, "[DATA]");
             for (var i=0; i<ds_list_size(datalist); i++) {
                 buffer_write(buffer, buffer_string, string(ds_list_find_value(datalist, i)));
@@ -137,6 +142,7 @@ if (destid<0) {
             str_ += "srcname:"+net_name+chr(10);
             str_ += "key:"+destkey+chr(10);
             str_ += "time:"+time+chr(10);
+            str_ += "compatible:"+net_compatible+chr(10);
             str_ += "[DATA]";
             for (var i=0; i<ds_list_size(datalist); i++) {
                 str_ += chr(10)+string(ds_list_find_value(datalist, i));

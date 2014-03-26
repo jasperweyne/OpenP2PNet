@@ -1,6 +1,6 @@
-///net_init(name,key,port,connectiontype,interval,maxpeers);
+///net_init(name,key,port,connectiontype,interval,maxpeers,compatible);
 globalvar net_vars;
-var net_name, net_key, net_lanport, net_pubport, net_pubtype, net_interval, net_maxpeers;
+var net_name, net_key, net_lanport, net_pubport, net_pubtype, net_interval, net_maxpeers, net_compatible;
 var net_peer_id, net_peer_key, net_peer_ip, net_peer_port, net_peer_nettype, net_peer_name, net_peer_ping, net_peer_lastping, net_peer_pingrecv, net_peer_type, net_peer_socket;
 var net_cmdlist, net_msglist, net_idcounter;
 var net_devicemaster, net_devicemasterid, net_lanserver, net_pubserver, net_timer;
@@ -12,6 +12,7 @@ net_pubport = argument2;
 net_pubtype = argument3;
 net_interval = argument4;
 net_maxpeers = argument5;
+net_compatible = game_id+";"+argument6;
 
 //Serverlists
 net_peer_id = ds_list_create();         //Local ID of the clien
