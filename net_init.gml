@@ -62,6 +62,7 @@ ds_map_add(net_vars, "net_pubport", net_pubport);
 ds_map_add(net_vars, "net_pubtype", net_pubtype);
 ds_map_add(net_vars, "net_interval", net_interval);
 ds_map_add(net_vars, "net_maxpeers", net_maxpeers);
+ds_map_add(net_vars, "net_compatible", net_compatible);
 ds_map_add(net_vars, "net_peer_id", net_peer_id);
 ds_map_add(net_vars, "net_peer_key", net_peer_key);
 ds_map_add(net_vars, "net_peer_ip", net_peer_ip);
