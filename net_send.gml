@@ -1,10 +1,12 @@
 ///net_send(netInst,id,msgtype,datalist)
 var net_vars = argument0;
-var net_key, net_name, net_compatible;
+var net_name, net_key, net_pubport, net_pubtype, net_compatible;
 var net_peer_id, net_peer_key, net_peer_ip, net_peer_port, net_peer_nettype, net_peer_name, net_peer_ping, net_peer_lastping, net_peer_pingrecv, net_peer_type, net_peer_socket;
 var net_lanserver;
-net_key =               ds_map_find_value(net_vars, "net_key");
 net_name =              ds_map_find_value(net_vars, "net_name");
+net_key =               ds_map_find_value(net_vars, "net_key");
+net_pubport =           ds_map_find_value(net_vars, "net_pubport");
+net_pubtype =           ds_map_find_value(net_vars, "net_pubtype");
 net_compatible =        ds_map_find_value(net_vars, "net_compatible");
 net_peer_id =           ds_map_find_value(net_vars, "net_peer_id");
 net_peer_key =          ds_map_find_value(net_vars, "net_peer_key");
@@ -35,6 +37,8 @@ if (destid<0) {
     buffer_write(buffer, buffer_string, "type:"+string(NET_BROADCAST));
     buffer_write(buffer, buffer_string, "srckey:"+net_key);
     buffer_write(buffer, buffer_string, "srcname:"+net_name);
+    buffer_write(buffer, buffer_string, "srcport:"+string(net_pubport));
+    buffer_write(buffer, buffer_string, "srctype:"+string(net_pubtype));
     buffer_write(buffer, buffer_string, "key:-1");
     buffer_write(buffer, buffer_string, "time:"+time);
     buffer_write(buffer, buffer_string, "typeid:"+string(game_id));
@@ -62,6 +66,8 @@ if (destid<0) {
                 buffer_write(buffer, buffer_string, "type:"+string(conntype));
                 buffer_write(buffer, buffer_string, "srckey:"+net_key);
                 buffer_write(buffer, buffer_string, "srcname:"+net_name);
+                buffer_write(buffer, buffer_string, "srcport:"+string(net_pubport));
+                buffer_write(buffer, buffer_string, "srctype:"+string(net_pubtype));
                 buffer_write(buffer, buffer_string, "key:"+destkey);
                 buffer_write(buffer, buffer_string, "time:"+time);
                 buffer_write(buffer, buffer_string, "typeid:"+string(game_id));
@@ -86,6 +92,8 @@ if (destid<0) {
                 str_ += "type:"+string(conntype)+chr(10);
                 str_ += "srckey:"+net_key+chr(10);
                 str_ += "srcname:"+net_name+chr(10);
+                str_ += "srcport:"+string(net_pubport)+chr(10);
+                str_ += "srctype:"+string(net_pubtype)+chr(10);
                 str_ += "key:"+destkey+chr(10);
                 str_ += "time:"+time+chr(10);
                 str_ += "typeid:"+string(game_id)+chr(10);
@@ -116,6 +124,8 @@ if (destid<0) {
             buffer_write(buffer, buffer_string, "type:"+string(conntype));
             buffer_write(buffer, buffer_string, "srckey:"+net_key);
             buffer_write(buffer, buffer_string, "srcname:"+net_name);
+            buffer_write(buffer, buffer_string, "srcport:"+string(net_pubport));
+            buffer_write(buffer, buffer_string, "srctype:"+string(net_pubtype));
             buffer_write(buffer, buffer_string, "key:"+destkey);
             buffer_write(buffer, buffer_string, "time:"+time);
             buffer_write(buffer, buffer_string, "typeid:"+string(game_id));
@@ -140,6 +150,8 @@ if (destid<0) {
             str_ += "type:"+string(conntype)+chr(10);
             str_ += "srckey:"+net_key+chr(10);
             str_ += "srcname:"+net_name+chr(10);
+            str_ += "srcport:"+string(net_pubport)+chr(10);
+            str_ += "srctype:"+string(net_pubtype)+chr(10);
             str_ += "key:"+destkey+chr(10);
             str_ += "time:"+time+chr(10);
             str_ += "typeid:"+string(game_id)+chr(10);
