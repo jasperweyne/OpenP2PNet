@@ -40,8 +40,6 @@ net_vars = ds_map_create()
 ds_map_add(net_vars, "net_name", net_name);
 ds_map_add(net_vars, "net_key", net_key);
 ds_map_add(net_vars, "net_lanport", net_lanport);
-ds_map_add(net_vars, "net_pubport", net_pubport);
-ds_map_add(net_vars, "net_pubtype", net_pubtype);
 ds_map_add(net_vars, "net_interval", net_interval);
 ds_map_add(net_vars, "net_maxpeers", net_maxpeers);
 ds_map_add(net_vars, "net_compatible", net_compatible);
@@ -92,6 +90,8 @@ ds_map_add(net_vars, "net_devicemaster", net_devicemaster);
 ds_map_add(net_vars, "net_devicemasterid", net_devicemasterid);
 ds_map_add(net_vars, "net_lanserver", net_lanserver);
 ds_map_add(net_vars, "net_pubserver", net_pubserver);
+ds_map_add(net_vars, "net_pubport", net_pubport);
+ds_map_add(net_vars, "net_pubtype", net_pubtype);
 ds_map_replace(net_vars, "net_lanport", net_lanport);
 
 return net_vars;
