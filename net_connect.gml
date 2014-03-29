@@ -1,6 +1,6 @@
 ///net_connect(netInst,conntype,url,port)
 var net_vars = argument0;
-var net_peer_id, net_peer_key, net_peer_ip, net_peer_port, net_peer_nettype, net_peer_name, net_peer_ping, net_peer_lastping, net_peer_pingrecv, net_peer_type, net_peer_socket, net_peer_typeid;
+var net_peer_id, net_peer_key, net_peer_ip, net_peer_port, net_peer_nettype, net_peer_name, net_peer_ping, net_peer_lastping, net_peer_pingrecv, net_peer_lan, net_peer_socket, net_peer_typeid;
 var net_idcounter;
 net_peer_id =           ds_map_find_value(net_vars, "net_peer_id");
 net_peer_key =          ds_map_find_value(net_vars, "net_peer_key");
@@ -11,7 +11,7 @@ net_peer_name =         ds_map_find_value(net_vars, "net_peer_name");
 net_peer_ping =         ds_map_find_value(net_vars, "net_peer_ping");
 net_peer_lastping =     ds_map_find_value(net_vars, "net_peer_lastping");
 net_peer_pingrecv =     ds_map_find_value(net_vars, "net_peer_pingrecv");
-net_peer_type =         ds_map_find_value(net_vars, "net_peer_type");
+net_peer_lan =          ds_map_find_value(net_vars, "net_peer_lan");
 net_peer_socket =       ds_map_find_value(net_vars, "net_peer_socket");
 net_peer_typeid =       ds_map_find_value(net_vars, "net_peer_typeid");
 net_idcounter =         ds_map_find_value(net_vars, "net_idcounter");
@@ -63,7 +63,7 @@ ds_list_add(net_peer_name, "?");
 ds_list_add(net_peer_ping, 0);
 ds_list_add(net_peer_lastping, 0);
 ds_list_add(net_peer_pingrecv, 0);
-ds_list_add(net_peer_type, NETTYPE_EXT);
+ds_list_add(net_peer_lan, NETTYPE_EXT);
 ds_list_add(net_peer_socket, socket);
 ds_list_add(net_peer_typeid, "?");
 

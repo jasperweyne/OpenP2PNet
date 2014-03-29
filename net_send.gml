@@ -1,7 +1,7 @@
 ///net_send(netInst,id,msgtype,datalist)
 var net_vars = argument0;
 var net_name, net_key, net_pubport, net_pubtype, net_compatible;
-var net_peer_id, net_peer_key, net_peer_ip, net_peer_port, net_peer_nettype, net_peer_name, net_peer_ping, net_peer_lastping, net_peer_pingrecv, net_peer_type, net_peer_socket;
+var net_peer_id, net_peer_key, net_peer_ip, net_peer_port, net_peer_nettype, net_peer_name, net_peer_ping, net_peer_lastping, net_peer_pingrecv, net_peer_lan, net_peer_socket;
 var net_lanserver;
 net_name =              ds_map_find_value(net_vars, "net_name");
 net_key =               ds_map_find_value(net_vars, "net_key");
@@ -17,7 +17,7 @@ net_peer_name =         ds_map_find_value(net_vars, "net_peer_name");
 net_peer_ping =         ds_map_find_value(net_vars, "net_peer_ping");
 net_peer_lastping =     ds_map_find_value(net_vars, "net_peer_lastping");
 net_peer_pingrecv =     ds_map_find_value(net_vars, "net_peer_pingrecv");
-net_peer_type =         ds_map_find_value(net_vars, "net_peer_type");
+net_peer_lan =          ds_map_find_value(net_vars, "net_peer_lan");
 net_peer_socket =       ds_map_find_value(net_vars, "net_peer_socket");
 net_lanserver =         ds_map_find_value(net_vars, "net_lanserver");
 
