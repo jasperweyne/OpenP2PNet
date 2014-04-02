@@ -257,7 +257,7 @@ if (recvevent!=network_type_data) {
 }
 
 //Test whether package empty
-if (ds_list_size(argument2)==0) return 1;
+if (ds_list_size(recvlist)==0) return 1;
 
 //Add headers to map
 if (ds_list_find_value(recvlist, 0)!="[OPENP2PNET]") return 0;
