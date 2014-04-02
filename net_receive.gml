@@ -288,6 +288,7 @@ switch (recvmsg) {
     case "MSG_LANPEERREQ":
         ///SERVER
         var transfer_key, transfer_ip, transfer_port, transfer_name, transfer_nettype, transfer_typeid;
+        if (recvtype!="NET_BROADCAST") return 1;
         transfer_key = ds_list_create();
         transfer_ip = ds_list_create();
         transfer_port = ds_list_create();
