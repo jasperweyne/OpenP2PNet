@@ -20,17 +20,17 @@ if (pos<0) return -1;
 type = ds_list_find_value(net_peer_nettype, pos);
 
 switch (type) {
-    case NET_UDP:
+    case "NET_UDP":
         var buffer = ds_list_create();
-        net_send(net_vars, _id, MSG_DISCONN, buffer);
+        net_send(net_vars, _id, "MSG_DISCONN", buffer);
         ds_list_destroy(buffer);
-    case NET_TCP:
-    case NET_TCPRAW:
-    case NET_BROADCAST:
+    case "NET_TCP":
+    case "NET_TCPRAW":
+    case "NET_BROADCAST":
         var socket = ds_list_find_value(net_peer_socket, pos);
         network_destroy(socket);
         break;
-    case NET_HTTP:
+    case "NET_HTTP":
         break;
 }
 

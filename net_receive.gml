@@ -7,10 +7,6 @@
 **  <0: Unknown message ID, abs(val) is ds_map containing headers (make sure to remove after use!)
 */
 var net_vars = argument0;
-
-//Test whether package empty
-if (ds_list_size(argument2)==0) return 1;
-
 var net_key;
 var net_peer_id, net_peer_key, net_peer_ip, net_peer_port, net_peer_nettype, net_peer_name, net_peer_ping, net_peer_lastping, net_peer_pingrecv, net_peer_lan, net_peer_socket, net_peer_typeid;
 var net_msglist, net_idcounter;
@@ -33,13 +29,53 @@ net_msglist =           ds_map_find_value(net_vars, "net_msglist");
 net_idcounter =         ds_map_find_value(net_vars, "net_idcounter");
 net_lanserver =         ds_map_find_value(net_vars, "net_lanserver");
 net_pubserver =         ds_map_find_value(net_vars, "net_pubserver");
-var recvevent, recvlist, recvheaders, recvip, recvport, recvsocket, recvmsg, recvtype, recvkey, recvname, recvtypeid, recvtokey, recvtime, recvhash, datalist, datastart;
+var recvevent, recvlist, recvheaders, recvip, recvport, recvsocket, recvmsg, recvtype, recvkey, recvname, recvpubport, recvpubtype, recvtypeid, recvtokey, recvtime, recvhash, datalist, datastart;
 
 recvevent = argument1;
 recvlist = argument2;
 recvip = argument3;
 recvport = argument4;
 recvsocket = argument5;
+
+//TCP Connect/Disconnect
+if (recvevent!=network_type_data) {
+    if (recvevent==network_type_connect) {
+        //Connect
+        net_idcounter++;
+        ds_map_replace(net_vars, "net_idcounter", net_idcounter);
+        ds_list_add(net_peer_id, net_idcounter);
+        ds_list_add(net_peer_key, "?");
+        ds_list_add(net_peer_ip, recvip);
+        ds_list_add(net_peer_port, recvport);
+        ds_list_add(net_peer_nettype, "NET_TCP"); //Since you can't run a raw server, and all other protocols are connectionless, it must be built-in TCP
+        ds_list_add(net_peer_name, "?");
+        ds_list_add(net_peer_ping, 0);
+        ds_list_add(net_peer_lastping, 0);
+        ds_list_add(net_peer_pingrecv, 0);
+        ds_list_add(net_peer_lan, false);
+        ds_list_add(net_peer_socket, recvsocket);
+        ds_list_add(net_peer_typeid, "?");
+    } else {
+        //Disconnect
+        pos = ds_list_find_index(net_peer_socket, recvsocket);
+        ds_list_delete(net_peer_id, pos);
+        ds_list_delete(net_peer_key, pos);
+        ds_list_delete(net_peer_ip, pos);
+        ds_list_delete(net_peer_port, pos);
+        ds_list_delete(net_peer_nettype, pos);
+        ds_list_delete(net_peer_name, pos);
+        ds_list_delete(net_peer_ping, pos);
+        ds_list_delete(net_peer_lastping, pos);
+        ds_list_delete(net_peer_pingrecv, pos);
+        ds_list_delete(net_peer_lan, pos);
+        ds_list_delete(net_peer_socket, pos);
+        ds_list_delete(net_peer_typeid, pos);
+    }
+    return 1;
+}
+
+//Test whether package empty
+if (ds_list_size(argument2)==0) return 1;
 
 //Add headers to map
 if (ds_list_find_value(recvlist, 0)!="[OPENP2PNET]") return 0;
@@ -58,20 +94,14 @@ if (ds_map_exists(dsMap, "type")==false  || ds_map_exists(dsMap, "srckey")==fals
     ds_map_destroy(dsMap);
     return 0;
 } else {
-    var typeval = real(ds_map_find_value(dsMap, "type"));
-    ds_map_replace(dsMap, "type", typeval);
-    recvtype = typeval;
+    recvtype = ds_map_find_value(dsMap, "type");
     recvkey = ds_map_find_value(dsMap, "srckey");
     recvtokey = ds_map_find_value(dsMap, "key");
     recvtime = ds_map_find_value(dsMap, "time");
-    if (ds_map_exists(dsMap, "msg")==true) {
-        var msgval = real(ds_map_find_value(dsMap, "msg"));
-        ds_map_replace(dsMap, "msg", msgval);
-        recvmsg = msgval;
-    } else {
-        recvmsg = 0;
-    }
+    if (ds_map_exists(dsMap, "msg")==true) recvmsg = ds_map_find_value(dsMap, "msg"); else recvmsg = "default";
     if (ds_map_exists(dsMap, "srcname")==true) recvname = ds_map_find_value(dsMap, "srcname"); else recvname = "?";
+    if (ds_map_exists(dsMap, "srcport")==true) recvpubport = real(ds_map_find_value(dsMap, "srcname")); else recvpubport = 0;
+    if (ds_map_exists(dsMap, "srctype")==true) recvpubtype = ds_map_find_value(dsMap, "srctype"); else recvpubtype = "default";
     if (ds_map_exists(dsMap, "typeid")==true) recvtypeid = ds_map_find_value(dsMap, "typeid"); else recvtypeid = "?";
     ds_map_add(dsMap, "ip", recvip);
     ds_map_add(dsMap, "port", recvport);
@@ -80,90 +110,68 @@ if (ds_map_exists(dsMap, "type")==false  || ds_map_exists(dsMap, "srckey")==fals
     ds_map_destroy(dsMap);
 }
 
-//Check signature
-//pass
-
-//(Dis)connections
+//Add new peers
 switch (recvtype) {
-    case NET_TCP:
-    case NET_TCPRAW:
-        if (recvevent!=network_type_data) {
-            if (recvevent==network_type_connect) {
-                //Connect
-                net_idcounter++;
-                ds_map_replace(net_vars, "net_idcounter", net_idcounter);
-                ds_list_add(net_peer_id, net_idcounter);
-                ds_list_add(net_peer_key, "?");
-                ds_list_add(net_peer_ip, recvip);
-                ds_list_add(net_peer_port, recvport);
-                ds_list_add(net_peer_nettype, NET_TCP); //Since you can't run a raw server, and all other protocols are connectionless, it must be built-in TCP
-                ds_list_add(net_peer_name, "?");
-                ds_list_add(net_peer_ping, 0);
-                ds_list_add(net_peer_lastping, 0);
-                ds_list_add(net_peer_pingrecv, 0);
-                ds_list_add(net_peer_lan, NETTYPE_PEER);
-                ds_list_add(net_peer_socket, recvsocket);
-                ds_list_add(net_peer_typeid, "?");
-            } else {
-                //Disconnect
-                pos = ds_list_find_index(net_peer_socket, recvsocket);
-                ds_list_delete(net_peer_id, pos);
-                ds_list_delete(net_peer_key, pos);
-                ds_list_delete(net_peer_ip, pos);
-                ds_list_delete(net_peer_port, pos);
-                ds_list_delete(net_peer_nettype, pos);
-                ds_list_delete(net_peer_name, pos);
-                ds_list_delete(net_peer_ping, pos);
-                ds_list_delete(net_peer_lastping, pos);
-                ds_list_delete(net_peer_pingrecv, pos);
-                ds_list_delete(net_peer_lan, pos);
-                ds_list_delete(net_peer_socket, pos);
-                ds_list_delete(net_peer_typeid, pos);
-            }
-            return 1;
-        } else {
-            var pos = ds_list_find_index(net_peer_socket, recvsocket);
-            if (pos>=0) {
-                if (ds_list_find_value(net_peer_key, pos)=="?") ds_list_replace(net_peer_key, pos, recvkey);
-                if (ds_list_find_value(net_peer_name, pos)=="?") ds_list_replace(net_peer_name, pos, recvname);
-                if (ds_list_find_value(net_peer_typeid, pos)=="?") ds_list_replace(net_peer_typeid, pos, recvtypeid);
-            }
-        }
+    case "NET_TCP":
+    case "NET_TCPRAW":
+        //Handled above
         break;
-    case NET_UDP:
-        if (recvsocket==net_lanserver || recvsocket==net_pubserver) {
-            //Connect (Src: incoming)
-            var socket = -1;
-            while (socket<0) socket = network_create_socket(network_socket_udp);
-            recvsocket = socket;
+    case "NET_HTTP":
+        //Impossible to init from server, late messages will be denied
+        if (ds_list_find_index(net_peer_key, recvkey)<0) return 1;
+        break;
+    case "NET_BROADCAST":
+        if (ds_list_find_index(net_peer_key, recvkey)<0 && recvkey!=net_key) {
+            recvsocket = -1;
+            while (recvsocket<0) recvsocket = network_create_socket(network_socket_udp);
             net_idcounter++;
             ds_map_replace(net_vars, "net_idcounter", net_idcounter);
             ds_list_add(net_peer_id, net_idcounter);
             ds_list_add(net_peer_key, recvkey);
             ds_list_add(net_peer_ip, recvip);
             ds_list_add(net_peer_port, recvport);
-            ds_list_add(net_peer_nettype, NET_UDP);
+            ds_list_add(net_peer_nettype, "NET_UDP");
             ds_list_add(net_peer_name, recvname);
             ds_list_add(net_peer_ping, 0);
             ds_list_add(net_peer_lastping, 0);
             ds_list_add(net_peer_pingrecv, 0);
-            ds_list_add(net_peer_lan, NETTYPE_PEER);
+            ds_list_add(net_peer_lan, true);
             ds_list_add(net_peer_socket, recvsocket);
             ds_list_add(net_peer_typeid, recvtypeid);
-        } else {
-            //Connect (Src: outgoing)
-            var pos = ds_list_find_index(net_peer_socket, recvsocket);
-            if (pos>=0) {
-                if (ds_list_find_value(net_peer_key, pos)=="?") ds_list_replace(net_peer_key, pos, recvkey);
-                if (ds_list_find_value(net_peer_name, pos)=="?") ds_list_replace(net_peer_name, pos, recvname);
-                if (ds_list_find_value(net_peer_typeid, pos)=="?") ds_list_replace(net_peer_typeid, pos, recvtypeid);
-            }
+        }
+        break;
+    case "NET_UDP":
+        if (recvsocket==net_lanserver || recvsocket==net_pubserver) {
+            recvsocket = -1;
+            while (recvsocket<0) recvsocket = network_create_socket(network_socket_udp);
+            net_idcounter++;
+            ds_map_replace(net_vars, "net_idcounter", net_idcounter);
+            ds_list_add(net_peer_id, net_idcounter);
+            ds_list_add(net_peer_key, recvkey);
+            ds_list_add(net_peer_ip, recvip);
+            ds_list_add(net_peer_port, recvport);
+            ds_list_add(net_peer_nettype, "NET_UDP");
+            ds_list_add(net_peer_name, recvname);
+            ds_list_add(net_peer_ping, 0);
+            ds_list_add(net_peer_lastping, 0);
+            ds_list_add(net_peer_pingrecv, 0);
+            ds_list_add(net_peer_lan, false);
+            ds_list_add(net_peer_socket, recvsocket);
+            ds_list_add(net_peer_typeid, recvtypeid);
         }
         break;
 }
 
+//Update info
+if (recvkey!=net_key) {
+    var pos = ds_list_find_index(net_peer_key, recvkey);
+    if (ds_list_find_value(net_peer_port, pos)==0) ds_list_replace(net_peer_port, pos, recvport);
+    if (ds_list_find_value(net_peer_name, pos)=="?") ds_list_replace(net_peer_name, pos, recvname);
+    if (ds_list_find_value(net_peer_typeid, pos)=="?") ds_list_replace(net_peer_typeid, pos, recvtypeid);
+}
+
 //Modify vars when forwared message
-while (recvmsg==MSG_FORWARD) {
+while (recvmsg=="MSG_FORWARD") {
     recvip = ds_list_find_value(recvlist, datastart);
     recvport = real(ds_list_find_value(recvlist, datastart+1));
     
@@ -184,20 +192,14 @@ while (recvmsg==MSG_FORWARD) {
         ds_map_destroy(dsMap);
         return 0;
     } else {
-        var typeval = real(ds_map_find_value(dsMap, "type"));
-        ds_map_replace(dsMap, "type", typeval);
-        recvtype = typeval;
+        recvtype = ds_map_find_value(dsMap, "type");
         recvkey = ds_map_find_value(dsMap, "srckey");
         recvtokey = ds_map_find_value(dsMap, "key");
         recvtime = ds_map_find_value(dsMap, "time");
-        if (ds_map_exists(dsMap, "msg")==true) {
-            var msgval = real(ds_map_find_value(dsMap, "msg"));
-            ds_map_replace(dsMap, "msg", msgval);
-            recvmsg = msgval;
-        } else {
-            recvmsg = 0;
-        }
+        if (ds_map_exists(dsMap, "msg")==true) recvmsg = ds_map_find_value(dsMap, "msg"); else recvmsg = "default";
         if (ds_map_exists(dsMap, "srcname")==true) recvname = ds_map_find_value(dsMap, "srcname"); else recvname = "?";
+        if (ds_map_exists(dsMap, "srcport")==true) recvpubport = real(ds_map_find_value(dsMap, "srcname")); else recvpubport = 0;
+        if (ds_map_exists(dsMap, "srctype")==true) recvpubtype = ds_map_find_value(dsMap, "srctype"); else recvpubtype = "default";
         if (ds_map_exists(dsMap, "typeid")==true) recvtypeid = ds_map_find_value(dsMap, "typeid"); else recvtypeid = "?";
         ds_map_add(dsMap, "ip", recvip);
         ds_map_add(dsMap, "port", recvport);
@@ -208,11 +210,11 @@ while (recvmsg==MSG_FORWARD) {
     
     
     //Add current peer in chain
-    if (ds_list_find_index(net_peer_key, recvkey)<0) {
+    if (ds_list_find_index(net_peer_key, recvkey)<0 && recvkey!=net_key) {
         var pos = ds_list_find_index(net_peer_id, net_connect(net_vars, recvtype, recvip, recvport));
-        ds_list_replace(net_peer_key, pos, recvkey);
-        ds_list_replace(net_peer_name, pos, recvname);
-        ds_list_replace(net_peer_typeid, pos, recvtypeid);
+        if (ds_list_find_value(net_peer_name, pos)=="?") ds_list_replace(net_peer_name, pos, recvname);
+        if (ds_list_find_value(net_peer_typeid, pos)=="?") ds_list_replace(net_peer_typeid, pos, recvtypeid);
+
     }
     
     //Quit when no message provided
@@ -233,6 +235,7 @@ if (ds_list_find_index(net_msglist, recvhash)>=0) {
 }
 
 //To be forwarded
+if (recvtokey=="-1" && recvtype!="NET_BROADCAST") return 1;
 if (recvtokey!=net_key && recvtokey!="-1") {
     var fwdlist = ds_list_create();
     ds_list_copy(fwdlist, recvlist);
@@ -240,7 +243,7 @@ if (recvtokey!=net_key && recvtokey!="-1") {
     ds_list_insert(fwdlist, 1, recvport);
     if (ds_list_find_index(net_peer_key, recvtokey)==-1 || ds_list_find_index(net_peer_key, recvkey)<0) {
         for (var i=0; i<ds_list_size(net_peer_key); i++) {
-            net_send(net_vars, ds_list_find_value(net_peer_id, i), MSG_FORWARD, fwdlist);
+            net_send(net_vars, ds_list_find_value(net_peer_id, i), "MSG_FORWARD", fwdlist);
         }
     } else {
         net_send(net_vars, recvtokey, recvmsg, recvlist);
@@ -250,62 +253,95 @@ if (recvtokey!=net_key && recvtokey!="-1") {
 }
 
 switch (recvmsg) {
-    case MSG_CONN:
+    case "MSG_CONN":
         ///SERVER
+        datalist = ds_list_create();
+        pos = ds_list_find_index(net_peer_socket, recvsocket);
+        net_send(net_vars, ds_list_find_value(net_peer_id, pos), "MSG_INFO", datalist);
         return 1;
         
-    case MSG_DISCONN:
+    case "MSG_DISCONN":
         ///SERVER
         net_disconnect(net_vars, recvkey);
         return 1;
         
-    case MSG_PING:
+    case "MSG_PING":
         ///SERVER
         datalist = ds_list_create();
         pos = ds_list_find_index(net_peer_socket, recvsocket);
         ds_list_add(datalist, ds_list_find_value(recvlist, datastart));
-        net_send(net_vars, ds_list_find_value(net_peer_id, pos), MSG_PONG, datalist);
+        net_send(net_vars, ds_list_find_value(net_peer_id, pos), "MSG_PONG", datalist);
         ds_list_destroy(datalist);
         return 1;
         
-    case MSG_PONG:
+    case "MSG_PONG":
         ///CLIENT
         pos = ds_list_find_index(net_peer_socket, recvsocket);
         ds_list_replace(net_peer_ping, pos, round((get_timer()-real(ds_list_find_value(recvlist, datastart)))/1000));
         ds_list_replace(net_peer_pingrecv, pos, get_timer());
         return 1;
         
-    case MSG_INFOREQUEST:
-        ///SERVER
-        datalist = ds_list_create();
-        pos = ds_list_find_index(net_peer_socket, recvsocket);
-        net_send(net_vars, ds_list_find_value(net_peer_id, pos), MSG_INFO, datalist);
-        ds_list_destroy(datalist);
-        return 1;
-        
-    case MSG_INFO:
+    case "MSG_INFO":
         ///CLIENT
-        pos = ds_list_find_index(net_peer_socket, recvsocket);
-        ds_list_replace(net_peer_lan, pos, NETTYPE_EXT);
         return 1;
         
-    case MSG_PEERREQUEST:
+    case "MSG_LANPEERREQ":
         ///SERVER
-        var datalist = ds_list_create();
-        ds_list_add(datalist, ds_list_write(net_peer_key));
-        ds_list_add(datalist, ds_list_write(net_peer_ip));
-        ds_list_add(datalist, ds_list_write(net_peer_port));
-        ds_list_add(datalist, ds_list_write(net_peer_name));
-        ds_list_add(datalist, ds_list_write(net_peer_nettype));
-        ds_list_add(datalist, ds_list_write(net_peer_typeid));
+        var transfer_key, transfer_ip, transfer_port, transfer_name, transfer_nettype, transfer_typeid;
+        transfer_key = ds_list_create();
+        transfer_ip = ds_list_create();
+        transfer_port = ds_list_create();
+        transfer_name = ds_list_create();
+        transfer_nettype = ds_list_create();
+        transfer_typeid = ds_list_create();
+        for (var i=0; i<ds_list_size(net_peer_id); i++) {
+            if (ds_list_find_value(net_peer_lan, i)==true) {
+                ds_list_add(transfer_key, ds_list_find_value(net_peer_key, i));
+                ds_list_add(transfer_ip, ds_list_find_value(net_peer_ip, i));
+                ds_list_add(transfer_port, ds_list_find_value(net_peer_port, i));
+                ds_list_add(transfer_name, ds_list_find_value(net_peer_name, i));
+                ds_list_add(transfer_nettype, ds_list_find_value(net_peer_nettype, i));
+                ds_list_add(transfer_typeid, ds_list_find_value(net_peer_typeid, i));
+            }
+        }
+        
+        datalist = ds_list_create();
+        ds_list_add(datalist, ds_list_write(transfer_key));
+        ds_list_add(datalist, ds_list_write(transfer_ip));
+        ds_list_add(datalist, ds_list_write(transfer_port));
+        ds_list_add(datalist, ds_list_write(transfer_name));
+        ds_list_add(datalist, ds_list_write(transfer_nettype));
+        ds_list_add(datalist, ds_list_write(transfer_typeid));
+        
         pos = ds_list_find_index(net_peer_socket, recvsocket);
-        net_send(net_vars, ds_list_find_value(net_peer_id, pos), MSG_PEERTRANSFER, datalist);
+        net_send(net_vars, ds_list_find_value(net_peer_id, pos), "MSG_LANPEER", datalist);
+        
         ds_list_destroy(datalist);
+        ds_list_destroy(transfer_key);
+        ds_list_destroy(transfer_ip);
+        ds_list_destroy(transfer_port);
+        ds_list_destroy(transfer_name);
+        ds_list_destroy(transfer_nettype);
+        ds_list_destroy(transfer_typeid);
         return 1;
         
-    case MSG_PEERTRANSFER:
+    case "MSG_LANPEER":
         ///CLIENT
         var transfer_key, transfer_ip, transfer_port, transfer_name, transfer_nettype, transfer_typeid;
+        var recvid, lanid;
+        recvid = ds_list_find_index(net_peer_socket, recvsocket);
+        lanid = ds_list_find_index(net_peer_id, net_devicemasterid);
+        if (lanid<0) {
+            net_devicemasterid = -1;
+            ds_map_replace(net_vars, "net_devicemasterid", net_devicemasterid);
+        }
+        if (net_devicemasterid<0) {
+            net_devicemasterid = ds_list_find_value(net_peer_id, recvid);
+            ds_map_replace(net_vars, "net_devicemasterid", net_devicemasterid);
+        } else {
+            if (net_devicemasterid!=recvid) return 1;
+        }
+        
         transfer_key = ds_list_create();
         transfer_ip = ds_list_create();
         transfer_port = ds_list_create();
@@ -321,12 +357,14 @@ switch (recvmsg) {
         ds_list_read(transfer_typeid, ds_list_find_value(recvlist, datastart+5));
         
         var pos = ds_list_find_index(transfer_key, net_key);
-        ds_list_delete(transfer_key, pos);
-        ds_list_delete(transfer_ip, pos);
-        ds_list_delete(transfer_port, pos);
-        ds_list_delete(transfer_name, pos);
-        ds_list_delete(transfer_nettype, pos);
-        ds_list_delete(transfer_typeid, pos);
+        if (pos>=0) {
+            ds_list_delete(transfer_key, pos);
+            ds_list_delete(transfer_ip, pos);
+            ds_list_delete(transfer_port, pos);
+            ds_list_delete(transfer_name, pos);
+            ds_list_delete(transfer_nettype, pos);
+            ds_list_delete(transfer_typeid, pos);
+        }
         
         for (var i=0; i<ds_list_size(transfer_key); i++) {
             if (ds_list_find_index(net_lan_key, ds_list_find_value(transfer_key, i))<0) {

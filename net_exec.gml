@@ -1,17 +1,20 @@
-///netcommand(netInst,command,argument0,argument1,etc.)
+///netcommand(netInst,time,command,argument0,argument1,etc.)
 /***********************
 ** AVAILABLE COMMANDS **
 ************************
 **
 ** CMD_PING; ID
-**
+** CMD_DISCONN; ID
 **
 */
-var net_vars = argument0;
-var net_cmds = ds_map_find_value(net_vars, "net_cmds");
-if (argument_count>=2) {
+var net_vars = argument[0];
+var net_cmdlist;
+net_cmdlist = ds_map_find_value(net_vars, "net_cmdlist");
+
+if (argument_count>=3) {
     var list;
     list = ds_list_create();
-    for (var i=1; i<argument_count; i++) ds_list_add(list, argument[i]);
-    ds_list_add(net_cmds, list);
+    for (var i=2; i<argument_count; i++) ds_list_add(list, argument[i]);
+    ds_list_add(net_cmdlist, list);
+    ds_list_add(net_cmdlist, argument[1]);
 }

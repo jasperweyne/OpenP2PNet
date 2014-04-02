@@ -65,7 +65,6 @@ net_devicemaster = true;
 net_devicemasterid = -1;
 net_lanserver = network_create_server(network_socket_udp, net_lanport, net_maxpeers);
 if (net_lanserver<0) {
-    while (net_devicemasterid<0) net_devicemasterid = net_connect(net_vars, NET_UDP, "127.0.0.1", 6510);
     net_devicemaster = false;
     while (net_lanserver<0) {
         net_lanport++;
@@ -76,12 +75,12 @@ if (net_lanserver<0) {
 //Public
 switch (argument3) {
     case network_socket_tcp:
-        net_pubtype = NET_TCP;
+        net_pubtype = "NET_TCP";
         net_pubserver = network_create_server(network_socket_tcp, net_pubport, net_maxpeers);
         break;
     case network_socket_udp:
     default:
-        net_pubtype = NET_UDP;
+        net_pubtype = "NET_UDP";
         net_pubserver = network_create_server(network_socket_udp, net_pubport, net_maxpeers);
         break;
 }   
